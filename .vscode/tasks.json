@@ -1,0 +1,52 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Clean",
+            "type": "shell",
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": [],
+            "command": "bash",
+            "args": [".vscode/defold.sh", "clean"]
+        },
+        {
+            "label": "Resolve",
+            "type": "shell",
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": [],
+            "command": "bash",
+            "args": [".vscode/defold.sh", "resolve"]
+        },
+        {
+            "label": "Build",
+            "type": "shell",
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": [],
+            "command": "bash",
+            "args": [".vscode/defold.sh", "build"]
+        },
+        {
+            "label": "Bundle",
+            "type": "shell",
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": [],
+            "command": "bash",
+            "args": [".vscode/defold.sh", "bundle", "${input:platform}"]
+        }
+    ],
+    "inputs": [
+        {
+            "id": "platform",
+            "description": "Select the platform to build",
+            "type": "pickString",
+            "options": [
+                { "value": "iOS" },
+                { "value": "Android" },
+                { "value": "macOS" },
+                { "value": "Windows" },
+                { "value": "Linux" },
+                { "value": "HTML5" }
+            ]
+        }      
+    ]
+}

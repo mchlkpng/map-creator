@@ -1,0 +1,140 @@
+{
+	"filename": "MapEx.json",
+	
+
+	"mapEx": {
+
+		"name": "mapEx",
+
+		"background": "plain",
+
+		"bgColor": [1, 1, 1, 1],
+
+		"data": [
+
+			{
+				"type": "spawn",
+				"pos": [0, 20, 0],
+				"size": [100, 20, 1],
+				"color": [0.75, 0.75, 0.75, 1],
+				"rotation": [0, 0, 0]
+			},
+
+			{
+				"type": "platform",
+				"typedata": {
+					"type": "normal",
+					"texture": "none"
+				},
+				"pos": [100, 20, 0],
+				"size": [800, 20, 1],
+				"color": [0, 0, 0, 1],
+				"rotation": [0, 0, 0]
+			},
+
+			{
+				"type": "item",
+				"typedata": {
+					"type": "pistol",
+					"itemDimensions": [5, 5, 5, 5]
+					"gunData": {
+						"perMag": 7,
+						"mags": 10,
+						"firerate": 0,
+						"wait": 200
+					}
+				},
+				"pos": [300, 20, 0],
+				"size": [1, 1, 1],
+				"color": [1, 1, 1, 1],
+				"rotation": [0, 0, 0]
+			},
+
+			{
+				"type": "enemy",
+				"typedata": {
+					"type": "normal",
+					"weapon": "fists",
+					"range": 250,
+					"difficulty": 3,
+					"health": 100
+				},
+				"pos": [700, 500, 0],
+				"size": [1, 1, 1],
+				"color": [1, 1, 1, 1],
+				"rotation": [0, 0, 0],
+				"events": {
+					"on_die": {
+						"event": "on_die"
+					}
+				}
+			},
+
+			{
+
+				"type": "platform",
+				"typedata": {
+
+					"type": "retract",
+
+					"retractAnim": "delete",
+
+					"texture": null
+
+				},
+
+				"eventListeners": {
+
+					"on_die": {
+
+						"transmitterType": null,
+
+						"id": [4],
+
+						"fromAllIds": false,
+
+						"timesCalled": 1,
+
+						"callbackId": "retract"
+
+					}
+
+				},
+
+				"pos": [900, 0, 0],
+
+				"size": [50, 1000, 1],
+
+				"color": [0, 0, 1, 1],
+
+				"rotation": [0, 0, 180]
+
+			},
+
+
+
+			{
+
+				"type": "final",
+
+				"events": {
+					"on_final": {
+						"event": "on_final"
+					}
+				},
+
+				"pos": [900, 20, 0],
+
+				"size": [100, 20, 1],
+
+				"color": [1, 0, 0, 1],
+
+				"rotation": [0, 0, 0]
+
+			}
+
+		]
+
+	}
+
+}

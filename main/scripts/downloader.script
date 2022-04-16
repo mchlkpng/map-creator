@@ -1,0 +1,269 @@
+local globals = require "lua_modules.globals"
+local directory = sys.get_save_file("mpcreator", "directory.dir"):gsub("directory.dir", "")
+local normDir = lfs.currentdir()
+
+--[[ HOW TO ENCRYPT MODS
+send message to this script (#)
+
+ENCRYPTING OFF OF EXTERNAL SERVER
+To encrypt off of external server, send message "encMod" with parameters server (string), mod (string), and encNum (number)
+server (string): the server where the files are stored to be encrypted
+mod (string): name of the mod being encrypted
+encNum (num): Seed number used for encrypting
+Example: msg.post("#", "encMod", {server = [servername], mod = [modname], encNum = [encryptionSeedNumber])
+
+ENCRYPTING OFF OF DISK
+To encrypt off of disk, send message "encModDisk" with parameters mod (string) and encNum (number)
+mod (string): name of mod being encrypted
+encNum (num): Seed number used for encrypting
+Example: msg.post("#", "encMod", mod = [modname], encNum = [encryptionSeedNumber])
+]]
+
+function init(self)
+	--globals.getEncrypted("oldMod", false)
+	--timer.delay(1, false, function()msg.post("#", "encModDisk", {mod = "oldMod2", encNum = 2})end)
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	if self.gotSomething then
+		
+	end
+end
+
+function getStuff(callback)
+	callback()
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("encMod") then
+		local worked = pcall(http.request, message.server .. "/mods/" .. message.mod .. "/modfiles",  "GET", function(self, id, response)
+			if response.status == 200 or response.status == 304 then
+				local j = json.decode(response.response).files
+				print("eosj")
+				msg.post("#", "gettem2", {server = message.server, mod = message.mod, encNum = message.encNum, j = j})
+			elseif response.status == 404 then
+				error("Mod '" .. message.mod .. "' could not be found on this server.")
+				return
+			else
+				print("Couldn't download mod '" .. mesage.mod .. "'. Error Code: " .. response.status)
+			end
+		end)
+		if not worked then
+			error("Couldn't download mod '" .. message.mod .."'. This mod may not exit in this server.")
+			return
+		end
+	end
+
+	if message_id == hash("encModDisk") then
+		local mfFile = io.open(directory .. "/mods/" .. message.mod .. "/dirs.json", "r")
+		local dirs = json.decode(mfFile:read("*a"))
+		mfFile:close()
+		local encTable = {}
+		for i, v in pairs(dirs) do
+			local path
+			for j, w in ipairs(v) do
+				path = "/" .. message.mod .. "/" .. i .. "/" .. w
+				--do something here for loading
+				local file
+
+				if path:find(".png") or path:find(".jpg") then
+					file = io.open(directory .. "mods" .. path, "rb")
+				else
+					file = io.open(directory .. "mods" .. path, "r")
+				end
+				if file then
+					local inf = file:read("*a")
+					file:close()
+					if path:find(".png") or path:find(".jpg") then
+						encTable[w] = inf
+					else
+						encTable[w] = globals.encrypt(inf, message.encNum)
+					end
+					
+				else
+					print("File '" .. path .. "' doesn't seem to exist.")
+				end
+			end
+		end
+		local f = io.open(directory .. "mods/" .. message.mod .. "/" .. message.mod .. ".encr", "wb")
+		f:write(sys.serialize(encTable))
+		f:flush()
+		f:close()
+		print("Mod '" .. message.mod .. "' encrypted successfully.")
+	end
+	--gets maps
+	--[[
+	message table
+	server - server name or root directory to the /maps/ folder for the file
+	map - map name to download
+	redownload (optional) - boolean whether to redownload or not
+	]]
+	if message_id == hash("dMap") then
+		lfs.chdir(directory)
+		if not lfs.chdir("maps") then
+			lfs.mkdir("maps")
+		end
+		lfs.chdir(normDir)
+
+		if not message.redownload and select(1, io.open(directory .. "/maps/" .. message.map)) then
+			print("The map '" .. message.map .. "' is already downloaded on this device!")
+			return
+		else
+			local worked = pcall(http.request, message.server .. "/maps/" .. message.map, function(self, id, response)
+				
+			end)
+		end
+	end
+
+	--Downloads mod off of server by calling HTTP GET Req to http(s)://server.name/modName/modfiles, which contains a JSON string of
+	--file paths
+
+	--[[
+	message table:
+	server - server name or root domain (http(s)://server.name)
+	mod - name of the mode
+	redownload - boolean of whether to redownload or not
+	]]
+	if message_id == hash("dMod") then
+		local worked = pcall(http.request, message.server .. "/mods/" .. message.mod .. "/modfiles",  "GET", function(self, id, response)
+			local j = json.decode(response.response).files
+			msg.post("#", "gettem", {server = message.server, mod = message.mod, j = j, redownload = message.redownload or false})
+		end)
+		if not worked then
+			print("Couldn't download mod '" .. message.mod .."'. This mod may not exit in this server.")
+			return
+		end
+	end
+
+	--gets files
+	--[[
+	message table
+	j - table of the previously decoded JSON file
+	mod - name of the mod
+	server - server name of root directory that contains the mod file
+	redownload - boolean of whether to redownload files or not
+	]]
+	if message_id == hash("gettem") then
+		local cnt = 0
+		local needed = #message.j
+		for i, v in ipairs(message.j) do
+			lfs.chdir(directory)
+			local worked = pcall(http.request, message.server .. "/mods" .. v, "GET", function(sel, iD, res)
+				local filename = v:gsub("/" .. message.mod .. "/", "")
+				filename = filename:gsub("/", "_")
+				if res.status == 200 or res.status == 304 then
+					if not lfs.chdir("mods") then
+						lfs.mkdir("mods")
+						lfs.chdir("mods")
+					end
+					if not lfs.chdir(message.mod) then
+						lfs.mkdir(message.mod)
+					end
+	
+
+					if not message.redownload and select(1, io.open(directory .. "mods/" .. message.mod .. "/" .. filename, "r")) then
+						print("File '" .. filename .. "' is already installed in the '" .. message.mod .. "' mod folder.")
+						needed = needed - 1
+						io.close()
+						lfs.chdir(normDir)
+						if needed == 0 then
+							print("The '" .. message.mod .. "' mod is already installed on this device!")
+						elseif cnt == needed then
+							print("All done downloading mod '" .. message.mod .. "'.")
+						end
+					else
+						lfs.chdir(normDir)
+						print("'" .. filename .. "' downloaded.")
+						if string.find(filename, ".png") or string.find(filename, ".jpg") then
+							local file = io.open(directory .. "mods/" .. message.mod .. "/" .. filename, "wb")
+							file:write(res.response)
+							file:flush()
+							file:close()
+						else
+							local file = io.open(directory .. "mods/" .. message.mod .. "/" .. filename, "w")
+							file:write(res.response)
+							file:flush()
+							file:close()
+						end
+
+						cnt = cnt + 1
+						if cnt == needed then
+							print("All done downloading mod '" .. message.mod .. "'.")
+						end
+					end
+				else
+					error("File '" .. v .. "' could not be gotten from the requested server. HTTP Response Code: " .. res.status)
+				end
+			end)
+			if not worked then
+				error("Could not download '" .. v .. "'.")
+			end
+		end
+	end
+
+	if message_id == hash("gettem2") then
+		local cnt = 0
+		local needed = #message.j
+		local encFiles = {}
+		print("huh")
+		for i, v in ipairs(message.j) do
+			cnt = cnt + 1
+			lfs.chdir(directory)
+			local worked = pcall(http.request, message.server .. "/mods" .. v, "GET", function(sel, iD, res)
+				local filename = v:gsub("/" .. message.mod .. "/", "")
+				filename = filename:gsub("/", "_")
+				if res.status == 200 or res.status == 304 then
+					if not lfs.chdir("mods") then
+						lfs.mkdir("mods")
+						lfs.chdir("mods")
+					end
+					if not lfs.chdir(message.mod) then
+						lfs.mkdir(message.mod)
+					end
+					lfs.chdir(normDir)
+					if v:find(".png") or v:find(".jpg") then
+						encFiles[v] = res.response
+					else
+						encFiles[v] = globals.encrypt(res.response, message.encNum)
+					end
+						
+					if cnt == needed then
+						local file = io.open(directory .. "mods/" .. message.mod .. "/" .. message.mod .. ".encr", "wb")
+						file:write(sys.serialize(encFiles))
+						file:flush()
+						file:close()
+					end
+
+
+				end
+			end)
+			if not worked then
+				error("Could not download '" .. v .. "'.")
+			end
+		end
+	end
+end
+
+function on_input(self, action_id, action)
+	-- Add input-handling code here. The game object this script is attached to
+	-- must have acquired input focus:
+	--
+	--    msg.post(".", "acquire_input_focus")
+	--
+	-- All mapped input bindings will be received. Mouse and touch input will
+	-- be received regardless of where on the screen it happened.
+	-- Learn more: https://defold.com/manuals/input/
+	-- Remove this function if not needed
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end

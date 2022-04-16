@@ -1,0 +1,164 @@
+{
+    "filename": "amogus.json",
+    "mods": [
+        "oldMod",
+        "newMod"
+    ],
+    "modservers": {
+        "oldMod": "mainserver",
+        "newMod": "mainserver"
+    },
+    "amogus": {
+        "name": "amogus",
+        "background": ["oldMod", "back.png"],
+        "data": [
+            {
+                "type": "custom",
+                "typedata": {
+                    "mod": "oldMod",
+                    "modtype": "baka",
+                    "script": "script.lua",
+                    "modtypedata": {
+                    }
+                },
+                "pos": [50, 0, 0],
+                "size": [1, 1, 1],
+                "color": [1, 1, 1, 1],
+                "rotation": [0, 0, 0]
+            },
+            {
+                "type": "custom",
+                "typedata": {
+                    "mod": "oldMod",
+                    "modtype": "baka",
+                    "script": "script.lua",
+                    "modtypedata": {
+                    }
+                },
+                "pos": [355, 286, 0],
+                "size": [1, 1, 1],
+                "color": [1, 1, 1, 1],
+                "rotation": [0, 180, 0] 
+            },
+            {
+                "type": "custom",
+                "typedata": {
+                    "mod": "oldMod",
+                    "modtype": "baka",
+                    "script": "script.lua",
+                    "modtypedata": {
+                    }
+                },
+                "pos": [703, 784, 0],
+                "size": [1, 1, 1],
+                "color": [1, 0, 0, 1],
+                "rotation": [0, 0, 0] 
+            },
+            {
+                "type": "custom", 
+                "typedata": {
+                    "mod": "oldMod",
+                    "modtype": "baka",
+                    "script": "script.lua",
+                    "modtypedata": {
+                    }
+                },
+                "pos": [30, 354, 0],
+                "size": [1, 2, 1],
+                "color": [1, 1, 0, 1],
+                "rotation": [0, 180, 0] 
+            },
+            {
+                "type": "custom",
+                "typedata": {
+                    "mod": "oldMod",
+                    "modtype": "baka",
+                    "script": "script.lua",
+                    "modtypedata": {
+                    }
+                },
+                "pos": [900, 543, 0],
+                "size": [10, 3, 1],
+                "color": [0.625, 0.125, 0.9375, 1],
+                "rotation": [0, 0, 0] 
+            },
+            {
+                "type": "custom",
+                "typedata": {
+                    "mod": "oldMod",
+                    "modtype": "baka",
+                    "script": "script.lua",
+                    "modtypedata": {
+                    }
+                },
+                "pos": [900, 543, 0],
+                "size": [10, 3, 1],
+                "color": [0.625, 0.125, 0.9375, 1],
+                "rotation": [0, 0, 0] 
+            },
+            {
+                "type": "platform",
+                "typedata": {
+                    "type": "normal",
+                    "texture": "none"
+                },
+                "pos": [100, 20, 0],
+                "size": [800, 20, 1],
+                "color": [0, 0.2, 1, 1],
+                "rotation": [0, 0, 0] 
+            },
+            {
+                "type": "platform",
+                "typedata": {
+                    "type": "normal",
+                    "texture": "none"
+                },
+                "pos": [100, 80, 0],
+                "size": [730, 34, 1],
+                "color": [1, 0, 1, 1],
+                "rotation": [0, 0, 0]
+            },
+            {
+                "type": "platform",
+                "typedata": {
+                    "type": "normal",
+                    "texture": "none"
+                },
+                "pos": [500, 1000, 0],
+                "size": [30, 400, 1],
+                "color": [1, 0, 1, 1],
+                "rotation": [0, 0, 0]
+            },
+            {
+                "type": "platform",
+                "typedata": {
+                    "type": "normal",
+                    "texture": "none"
+                },
+                "pos": [0, 20, 0],
+                "size": [100, 20, 1],
+                "color": [1, 1, 0, 1],
+                "rotation": [0, 0, 0]
+                },
+                {
+                    "type": "enemy",
+                    "typedata": {
+                        "type": "normal",
+                        "weapon": "fists",
+                        "range": 250,
+                        "difficulty": 3,
+                        "health": 100
+                    },
+                    "pos": [700, 500, 0],
+                    "size": [1, 1, 1],
+                    "color": [1, 1, 1, 1],
+                    "rotation": [0, 0, 0],
+                    "events": {
+                        "on_die": {
+                            "event": "on_die"
+                        }
+                    }
+                }
+        ]
+    }
+}

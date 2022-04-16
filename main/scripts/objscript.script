@@ -1,0 +1,110 @@
+local types = require("lua_modules.types")
+local globals = require("lua_modules.globals")
+
+local function createObject(self, id, pos, rot, color, size, optional_typedata, optional_events, optional_eventListeners, mode, mapname)
+	local position = vmath.vector3()
+	position.x = pos[1]
+	position.y = pos[2]
+	position.z = pos[3]
+
+	local rotation = vmath.vector3()
+	rotation.x = rot[1]
+	rotation.y = rot[2]
+	rotation.z = rot[3]
+
+	local colr = vmath.vector4()
+	colr.x = color[1]
+	colr.y = color[2]
+	colr.z = color[3]
+	colr.w = color[4]
+
+	local siz
+	if type(size) == "table" then
+		siz = vmath.vector3()
+		siz.x = size[1]
+		siz.y = size[2]
+		siz.z = size[3]
+	else
+		siz = "default"
+	end
+	if type(siz) ~= "string" then if siz.z == 0 then siz.z = 1 end end
+
+	local typedata = optional_typedata or {}
+	local events = optional_events or {}
+	local eventListeners = optional_eventListeners or {}
+	local obj
+	if siz ~= "default" then
+		obj = factory.create("#factory", position, nil, {}, siz)
+	else
+		obj = factory.create("#factory", position, nil, {}, vmath.vector3(1, 1, 1))
+	end
+	
+	timer.delay(0.1, false, function()
+		msg.post(obj, "data", {mode = mode, id = id, extradata = {size = siz, rotation = rotation, color = colr}, typedata = typedata, events = events, eventListeners = eventListeners, mapname = mapname})
+	end)
+
+	return obj
+end
+
+function init(self)
+	local col = tostring(msg.url()):gsub("url: %[", ""):gsub("%]", "")
+	col = string.sub(col, 1, string.find(col, ":") - 1)
+	self.objs = {}
+	local parent = msg.url()
+	local parent = tostring(parent)
+	self.type = parent:gsub("_spawner#script%]", "")
+	self.type = self.type:gsub("url: %[".. col .. ":/", "")
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("spawn") then
+		if string.find(message.mode, "mapcreator") then
+			self.mode = "create"
+		elseif string.find(message.mode, "ingame") then
+			self.mode = "ingame"
+		end
+
+		local key
+		if message.key == "next" then
+			key = go.get("/objManager#script", "numObjects") + 1
+		else
+			key = message.key
+		end
+		local v = message.val
+		local mapname = message.mapname or message.lvl
+		v.key = key
+		table.insert(self.objs, key, 
+		createObject(self, v.key, v.pos, v.rotation, v.color, v.size, v.typedata, v.events, v.eventListeners, self.mode, mapname))
+		msg.post("/objManager#script", "addobject", {key = key, val = self.objs[key]})
+	end
+end
+
+function on_input(self, action_id, action)
+	-- Add input-handling code here. The game object this script is attached to
+	-- must have acquired input focus:
+	--
+	--    msg.post(".", "acquire_input_focus")
+	--
+	-- All mapped input bindings will be received. Mouse and touch input will
+	-- be received regardless of where on the screen it happened.
+	-- Learn more: https://defold.com/manuals/input/
+	-- Remove this function if not needed
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end

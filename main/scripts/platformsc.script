@@ -1,0 +1,64 @@
+local globals = require "lua_modules.globals"
+local rendercam = require "rendercam.rendercam"
+go.property("collision", vmath.vector4(1,1,1,1))
+
+function init(self)
+	self.type = "platform"
+	self.colboxesloaded = false
+	self.colboxes = {}
+	self.colboxinfo = {}
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	--do("ur mom")
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("data") then
+		self.mode = message.mode
+		self.extraData = message.extradata
+		self.typedata = message.typedata
+		self.events = message.events
+		self.eventListeners = message.eventListeners
+		if self.extraData.size == "default" then self.extraData.size = vmath.vector3(100, 100, 1); go.set(".", "scale", self.extraData.size) end
+
+		go.set(".", "euler", self.extraData.rotation)
+		go.set("#sprite", "tint", self.extraData.color)
+		self.collision = vmath.vector4(0, self.extraData.size.x, self.extraData.size.y, 0)
+		self.colboxesloaded = false
+		self.colboxes, self.colboxinfo = globals.setCollision(self, self.collision)
+		self.colboxesloaded = true
+	end
+
+	if message_id == hash("trigger_response") then
+		if message.enter then
+			self.on = true
+		else
+			self.on = false
+		end
+	end
+end
+
+function on_input(self, action_id, action)
+	-- Add input-handling code here. The game object this script is attached to
+	-- must have acquired input focus:
+	--
+	--    msg.post(".", "acquire_input_focus")
+	--
+	-- All mapped input bindings will be received. Mouse and touch input will
+	-- be received regardless of where on the screen it happened.
+	-- Learn more: https://defold.com/manuals/input/
+	-- Remove this function if not needed
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end

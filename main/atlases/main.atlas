@@ -1,0 +1,31 @@
+images {
+  image: "/assets/images/background.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+}
+images {
+  image: "/assets/images/logo.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+}
+images {
+  image: "/builtins/graphics/particle_blob.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+}
+images {
+  image: "/assets/images/grid2.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+}
+images {
+  image: "/assets/images/10_2pixel.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+}
+images {
+  image: "/assets/images/testBox.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+}
+images {
+  image: "/assets/images/cursor.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+}
+margin: 0
+extrude_borders: 2
+inner_padding: 0

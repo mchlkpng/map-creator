@@ -1,0 +1,565 @@
+local sandbox = require "lua_modules.sandbox"
+local checkit = require "lua_modules.heProtecc"
+local globals = require "lua_modules.globals"
+local directory = sys.get_save_file("mpcreator", "directory.dir")
+directory = directory:gsub("directory.dir", "")
+local mapname
+local encMods = {}
+local system = sys.get_sys_info().system_name
+local sysType
+local sprites = {
+    16, 32, 64, 128, 256, 512, 1024, 2048
+}
+
+function setSprite(name)
+    msg.post("#", "setSprite", {name = name})
+end
+
+if system == "Windows" or "Darwin" or "Linux" then
+    sysType = "desktop"
+elseif system == "iPhone OS" or "Android" then
+    sysType = "mobile"
+elseif system == "HTML5" then
+    sysType = "html5"
+end
+
+function getInput()
+    msg.post(".", "acquire_input_focus")
+end
+
+function defineVars(self)
+    self.position = {x = 0, y = 0, z = 0}
+    self.prevIn = {}
+    self.input = {}
+    self.textures = {}
+    self.modserver = globals.hostname(true)
+    self.collisions = {}
+    self.resources = {}
+    self.animations = {}
+    self.colboxes = {}
+    self.scriptLoaded = false
+    self.animTimer = nil
+    self.currentTex = nil
+    self.curSprite = "#128"
+end
+
+function enableSprite(res)
+    for i, v in ipairs(sprites) do
+        if v == res then
+            msg.post("#" .. res, "enable")
+            setVar("curSprite", "#" .. res)
+        else
+            msg.post("#" .. v, "disable")
+        end
+    end
+end
+
+-- gets mod .encr file from requested server. If the encr file is already loaded in game, it just uses that instead of wasting time decrypting.
+function loadEnc(self, mod, fromHTTP, server, callback)
+    if encMods[mod] then
+        print("'" .. mod .. "' is already loaded.")
+        if callback then callback("idklol", {status = 200, response = "your mum"}, encMods[mod]) end
+        return encMods[mod]
+    else
+        encMods[mod] = globals.getEncrypted(mod, fromHTTP, server, function(id, response, tb) 
+            encMods[mod] = tb
+            callback(id, response, tb) end)
+        if not callback then return encMods[mod] end
+    end
+end
+
+function setTexture(self, name)
+    --if not 
+    if not self.textures then
+        print("id", self.id, msg.url())
+        go.set(".", "euler.z", 180)
+    end
+    if not self.textures[name] then
+        error("Texture '" .. name .. "' does not exist in textures.")
+        return
+    end
+    local texture = self.textures[name]
+    local imgRes = imageloader.load{
+        data = texture
+    }
+    enableSprite(imgRes.header.height)
+    resource.set_texture(go.get(self.curSprite, "texture0"), imgRes.header, imgRes.buffer)
+    self.currentTex = name
+end
+
+--Loads mod script by filename
+function loadScript(self, scrname, callback)
+    if not scrname:find(".lua") then
+        error("Script must be lua file!")
+        return false
+    end
+    local script = ""
+    local fl = "mods/" .. self.modname .. "/" .. self.type .. "/" .. scrname
+    local fl2 = "mods/" .. self.modname .. "/" .. self.type .. "_" .. scrname
+    if self.fromDir then
+        path = directory .. fl
+        local file = io.open(path, "r") or io.open(directory .. fl2, "r")
+        if not file and io.open(directory .. "mods/" .. self.modname .. "/" .. self.modname .. ".encr", "rb") then
+            io.close()
+            script = loadEnc(self, self.modname, false)["/" .. self.modname .. "/" .. self.type .. "/" .. scrname]
+        else
+            script = file:read("*a")
+            file:close()
+        end
+        if script:byte(1) == 27 then
+            error("Bytecode is not allowed!")
+            return false
+        end
+
+        local ret, mod, line = checkit.check(script)
+        if not ret then
+            error("Function or module '" .. mod .. "' might have been called on line " .. line .. " of script '" .. scrname .. "'.")
+        else
+            callback(loadstring(script))
+            return
+        end
+    else
+        --if not loading mod from directory, it tries to download .encr file. If that doesn't exist,
+        --it tries to download the script directly from the server.
+            local worked2 = pcall(loadEnc, self, self.modname, true, globals.hostname(true), function(id, response, decTb)
+                if response.status == 200 or response.status == 304 then
+                    script = decTb[scrname]
+                    if script:byte(1) == 27 then
+                        error("Bytecode is not allowed!")
+                        return false
+                    end
+
+                    local ret, mod, line = checkit.check(script)
+                    if not ret then
+                        error("Function or module '" .. mod .. "' might have been called on line " .. line .. " of script '" .. scrname .. "'.")
+                    else
+                        callback(loadstring(script))
+                        return
+                    end
+                else
+                    print("Couldn't download '" .. self.modname .. ".encr'. Error Code: " .. response.status)
+                    local worked = pcall(http.request, globals.hostname(true) .. "/" .. fl, "GET", function(sel2, iD, res)
+                        if res.status == 200 or res.status == 304 then
+                            script = res.response
+
+                            if script:byte(1) == 27 then
+                                error("Bytecode is not allowed!")
+                                return false
+                            end
+
+                            local ret, mod, line = checkit.check(script)
+                            if not ret then
+                                error("Function or module '" .. mod .. "' might have been called on line " .. line .. " of script '" .. scrname .. "'.")
+                            else
+                                callback(loadstring(script))
+                                return
+                            end
+                        else
+                            error("Couldn't download '" .. fl .. "'. Error Code: " .. response.status)
+                        end
+                    end)
+                    if not worked then
+                        error("Failed to download '" .. fl .. "'.")
+                    end
+                end
+            end)
+
+        if not worked2 then
+            
+        end
+    end
+end
+
+
+--Sets texture by filename; file data must already be in 'textures' table
+
+
+--Gets file data of textures by filename
+function getTextures(self, files, callback)
+    local ffiles = files
+    if type(ffiles) ~= "table" then
+        error("Input must be a table!")
+        return
+    end
+    local anAndD = {ffiles.animations, ffiles.defaultTex}
+    if ffiles.animations then
+        ffiles.animations = nil
+    end
+    if ffiles.defaultTex then
+        ffiles.defaultTex = nil
+    end
+    
+    local ttable = {}
+    for i, v in ipairs(ffiles) do
+        if type(v) == "table" then
+            --nothing lol
+        else
+            local texture = ""
+            --local w 
+            --if string.match(v, "/") then w = v:gsub("/", "_") else w = v end
+            local fl = "mods/" .. self.modname .. "/" .. self.type .. "/" .. v
+            local fl2 = "mods/" .. self.modname .. "/" .. self.type .. "_" .. v
+            local texture = ""
+            if self.fromDir then
+                path = directory .. fl
+                local file = io.open(path, "rb") or io.open(directory .. fl2, "rb")
+                if not file and io.open(directory .. "mods/" .. self.modname .. "/" .. self.modname .. ".encr", "rb") then
+                    io.close()
+                    texture = loadEnc(self, self.modname, false)["/" .. self.modname .. "/" .. self.type .. "/" .. v]
+                    ttable[v] = texture
+                else
+                    texture = file:read("*a")
+                    file:close()
+                    ttable[v] = texture
+                end
+                if globals.tablelen(ttable, false) == globals.tablelen(ffiles, false) then
+                    ffiles.animations = anAndD[1]
+                    ffiles.defaultTex = anAndD[2]
+                    return ttable
+                end
+                
+            else
+                local worked2 = pcall(loadEnc, self, self.modname, true, globals.hostname(true), function(id, response, decTb)
+                    if response.status == 200 or response.status == 304 then
+                       texture = decTb[v]
+                       ttable[v] = texture
+                       if globals.tablelen(ttable, false) == globals.tablelen(ffiles, false) then
+                           ffiles.animations = anAndD[1]
+                           ffiles.defaultTex = anAndD[2]
+                           callback(ttable, anAndD)
+                       end
+                    else
+                        print("Couldn't get encr file of '" .. self.modname .. "'. Error Code: " .. response.status)
+                        local worked = pcall(http.request, globals.hostname(true) .. "/" .. fl, "GET", function(self, id, res)
+                            if res.status == 200 or res.status == 304 then
+                                texture = res.response
+                                ttable[v] = texture
+                                if globals.tablelen(ttable, false) == globals.tablelen(ffiles, false) then
+                                    ffiles.animations = anAndD[1]
+                                    ffiles.defaultTex = anAndD[2]
+                                    callback(ttable, anAndD)
+                                end
+                            else
+                                print("Couldn't download '" .. v .. "'.")
+                            end
+                            
+                        end)
+                    end
+                end)
+            end
+        end
+
+
+    end
+
+    timer.delay(4, false, function()
+        return ttable
+    end)
+end
+
+--Plays animation by ID set in 'animations' table
+function play_anim(self, id, tb, callback)
+    cancel_anim()
+    local framerate, playback
+    if tb[1] == "default" and #tb == 1 then
+        framerate = self.animations[id].framerate
+        playback = self.animations[id].playback
+    elseif tb.framerate and tb.playback then
+        framerate = tb.framerate
+        playback = tb.playback
+    else
+        error("Parameter 'tb' must be a table and can only take 2 values:\n{'default'} or {framerate = (num), playback = (playback type)}")
+    end
+    
+    if not go[playback] then
+        error("Invalid playback type '" .. playback .. "'. Playback types are (strings):\nPLAYBACK_LOOP_FORWARD\nPLAYBACK_LOOP_BACKWARD\nPLAYBACK_LOOP_PINGPONG\nPLAYBACK_ONCE_FORWARD\nPLAYBACK_ONCE_BACKWARD\nPLAYBACK_ONCE_PINGPONG")
+    end
+    
+    if not self.animations[id] then
+        error("Animation ID '" .. id .. "' is not in 'animations' table!")
+    end
+    
+    local frames = self.animations[id].frames
+    if playback:find("ONCE") then
+        if playback:find("FORWARD") then
+            setTexture(self, frames[1])
+            local frame = 1
+            animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
+                frame = frame + 1
+                if frame > #frames then
+                    if callback then callback() end
+                    animTimer = nil
+                    timer.cancel(handle)
+                else
+                    setTexture(self, frames[frame])
+                end
+            end)
+        elseif playback:find("BACKWARD") then
+            local frame = #frames
+            setTexture(self, frames[frame])
+            animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
+                frame = frame - 1
+                if frame == 0 then
+                    if callback then callback() end
+                    animTimer = nil
+                    timer.cancel(handle)
+                else
+                    setTexture(self, frames[frame])
+                end
+            end)
+        elseif playback:find("PINGPONG") then
+            local frame = 1
+            setTexture(self, frames[1])
+            animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
+                if frame > #frames then
+                    if frame > #frames*2 -1 then
+                        if callback then callback() end
+                        animTimer = nil
+                        timer.cancel(handle)
+                    else
+                            setTexture(self, frames[frame - #frames])
+                    end
+                else
+                    setTexture(self, frames[frame])
+                end
+            end)
+        end
+    end
+
+    if playback:find("LOOP") then
+        if playback:find("FORWARD") then
+            setTexture(self, frames[1])
+            local frame = 1
+            animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
+                frame = frame + 1
+                if frame > #frames then
+                    if callback then callback() end
+                    frame = 1
+                end
+                
+                setTexture(self, frames[frame])
+            end)
+        elseif playback:find("BACKWARD") then
+            local frame = #frames
+            setTexture(self, frames[frame])
+            animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
+                frame = frame - 1
+                if frame == 0 then
+                    if callback then callback() end
+                    frame = #frames
+                end
+                
+                setTexture(self, frames[frame])
+            end)
+        elseif playback:find("PINGPONG") then
+            local frame = 1
+            setTexture(self, frames[1])
+            animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
+                if frame > #frames then
+                    if frame > #frames*2 -1 then
+                        if callback then callback() end
+                        frame = 1
+                    else
+                            setTexture(self, frames[frame - #frames])
+                    end
+                else
+                    setTexture(self, frames[frame])
+                end
+            end)
+        end
+    end
+    
+end
+
+function getIKey(table, key)
+    local e = {}
+    for i, v in ipairs(table) do
+        if v[1] == key then
+            for j, w in ipairs(v) do
+                if j ~= 1 then
+                    e[#e + 1] = w
+                end
+            end
+        end
+    end
+    return e
+end
+
+--cancels current animation
+function cancel_anim()
+    if animTimer then
+        timer.cancel(animTimer)
+        animTimer = nil
+        return true
+    else
+        return false
+    end
+end
+function move_by(var, num)
+    go.set(".", "position.".. string.lower(var), getVar("position")[var] + num)
+end
+
+function move_to(x, y, z)
+    go.set_position(vmath.vector3(x, y, z))
+end
+
+function change_XYZ_to(var, num)
+    go.set(".", "position." .. var, num)
+end
+
+function init(self)
+    defineVars(self)
+
+
+    
+    self.id = nil
+    self.type = nil
+    --create get and set object properties functions
+    function getProp(prop)
+        if prop ~= "tint" then
+            local p = go.get(".", prop)
+            return {x = p.x, y = p.y, z = p.z}
+        else
+            local p = go get(self.curSprite, "tint")
+            return {x = p.x, y = p.y, z = p.z, w = p.w}
+        end
+    end
+    function setProp(prop, value)
+        if prop ~= "tint" then
+            go.set(".", prop, vmath.vector3(value.x, value.y, value.z))
+        else
+            go.set(self.curSprite, "tint", vmath.vector4(value.x, value.y, value.z, value.w))
+        end
+    end
+end
+
+--local file = io.open(directory .. )
+
+function on_message(self, message_id, message, sender)
+    --gets info for script
+    if message_id == hash("data") then
+        self.fromDir = go.get("/objManager#script", "fromDir")
+        
+        self.mode = message.mode
+        self.extraData = message.extradata
+        self.typedata = message.typedata
+        msg.post("#", "scriptinfo", {id = message.id, type = self.typedata.modtype, modname = self.typedata.mod, mapname = message.mapname, scriptname = self.typedata.script})
+        self.events = message.events
+        self.eventListeners = message.eventListeners
+
+        if type(self.extraData.size) == "string" then
+            go.set(".", "scale", vmath.vector3(100, 100, 1))
+        else
+            go.set(".", "scale", self.extraData.size)
+        end
+        go.set(".", "euler", self.extraData.rotation)
+        go.set(self.curSprite, "tint", self.extraData.color)
+    end
+    
+    if message_id == hash("scriptinfo") then
+        self.id = message.id
+        self.type = message.type
+        mapname = message.mapname
+        self.modname = message.modname
+
+        loadScript(self, message.scriptname, function(f)
+            f()
+            self.resources, self.collisions = loadResources()
+            local sussyB = getTextures(self, self.resources, function(tex, anDe)
+                self.resources.animations = anDe[1]
+                self.resources.defaultTex = anDe[2]
+                self.textures = tex
+                self.animations = self.resources.animations
+                local eee = getIKey(self.collisions, "hi.png")
+                globals.setCollision(self, eee)
+
+                if self.animations.defaultAnim then
+                    self.defaultAnim = self.animations.defaultAnim
+                    play_anim(self, self.defaultAnim, {"default"})
+                elseif self.resources.defaultTex then
+                    self.defaultTex = self.resources.defaultTex
+                    setTexture(self, self.defaultTex)
+                end
+                initialize()
+                self.scriptLoaded = true
+            end)
+            if sussyB then self.textures = sussyB end
+
+            if self.textures then
+                if globals.tablelen(self.textures, false) ~= 0 then
+                    self.animations = self.resources.animations
+                    local eee = getIKey(self.collisions, "hi.png")
+                    globals.setCollision(self, eee)
+                    
+                    if self.animations.defaultAnim then
+                        self.defaultAnim = self.animations.defaultAnim
+                        play_anim(self, self.defaultAnim, {"default"})
+                    elseif self.resources.defaultTex then
+                        self.defaultTex = self.resources.defaultTex
+                        setTexture(self, self.defaultTex)
+                    end
+                    initialize()
+                    self.scriptLoaded = true
+                else
+                    print("There was a prolem loading textures.")
+                end
+            end
+        end)
+    end
+
+
+    if message_id == hash("setSprite") then
+        setTexture(self, message.name)
+    end
+end
+
+function update(self, dt)
+    if self.scriptLoaded then
+        if upd then
+            upd(dt)
+        end
+    end
+
+    function setVar(var, value)
+        self[var] = value
+    end
+    function getVar(var)
+        return self[var]
+    end
+
+
+
+
+    if not self.doneOnce then
+        self.doneOnce = true
+
+        enableSprite(128)
+        msg.post("#128", "disable")
+    end
+
+    --[[if self.input["action_id"] then
+        if self.input or globals.tablelen(self.input, false) ~= 0 then
+            self.prevIn = self.input
+            input(self.input["action_id"], self.input["action"])
+
+            self.input = {}
+        end
+    end]]
+end
+
+function on_input(self, action_id, action)
+    if self.scriptLoaded and self.mode == "ingame" then
+        if action_id then
+            input(globals.hash_to_string(action_id), action)
+        else
+            input(nil, action)
+        end
+            --[[if action_id == nil then
+            self.input["action_id"] = action_id
+            self.input["action"] = action
+        else
+           self.input["action_id"] = globals.hash_to_string(action_id)
+           self.input["action"] = action
+        end]]
+    end
+end

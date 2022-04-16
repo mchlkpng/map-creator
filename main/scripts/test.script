@@ -1,0 +1,85 @@
+--[[local modname = "newMod"
+local directory = sys.get_save_file("mpcreator", "directory.dir")
+directory = directory:gsub("directory.dir", "")
+local globals = {}
+local resources = {}
+local animConstants = {
+	
+}
+local currentAnim = nil
+
+function set_texture(name)
+	local path = directory .. modname
+	local file = io.open(path, "rb")
+	local bytes = file:read("*a")
+	file:close()
+
+	local imageRes = imageloader.load{
+		data = bytes
+	}
+	resource.set_texture(go.get("#sprite", "texture0"), imageRes.header, imageRes.buffer)
+end
+
+function play_anim(anim_id, framerate, playback, callback)
+	local anim = resources.animations[anim_id].frames
+	if string.find(playback, "ONCE") then
+		
+	end
+end
+
+function init(self)
+	globals = {
+		modname = modname
+	}
+	print(vmath.vector3(2, 4, 6) * 100)
+	local script = sys.load_resource("/res/testlua.lua")
+	function start(callback)
+		callback()
+	end		
+	local f = assert(loadstring(script))
+	f()
+	initialize()
+	resources = loadResources(directory .. "\\" .. modname)
+end]]
+local globals = require "lua_modules.globals"
+go.property("collision", vmath.vector4(-50, 50, -50, 50))
+
+function init(self)
+--	globals.setCollision(msg.url(), self.collision, {"platform"}, {"player"})
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Learn more: https://defold.com/manuals/message-passing/
+	-- Remove this function if not needed
+end
+
+function on_input(self, action_id, action)
+	-- Add input-handling code here. The game object this script is attached to
+	-- must have acquired input focus:
+	--
+	--    msg.post(".", "acquire_input_focus")
+	--
+	-- All mapped input bindings will be received. Mouse and touch input will
+	-- be received regardless of where on the screen it happened.
+	-- Learn more: https://defold.com/manuals/input/
+	-- Remove this function if not needed
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end

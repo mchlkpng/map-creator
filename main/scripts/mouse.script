@@ -1,0 +1,54 @@
+local rendercam = require("rendercam.rendercam")
+
+local function opnProps(menu, properties)
+	msg.post("properties#gui", "properties", {menu = menu, props = properties})
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	self.openMenu = nil
+	self.touching = nil
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("trigger_response") then
+		if message.enter then
+			print("touching " .. message.other_id)
+			self.touching = message.other_id
+		else
+			self.touching = nil
+		end
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("mouse_button_right") and go.get_position().x > 0 and go.get_position().y > 0 and not self.touching and action.pressed then
+		print("sussy")
+		self.openMenu = "grid"
+		opnProps(self.openMenu, {position = vmath.vector3(action.x, action.y, 0), screenposition = vmath.vector3(action.screen_x, action.screen_y, 0)})
+	end
+	
+	if action_id == nil then
+		local pos = rendercam.screen_to_world_2d(action.screen_x, action.screen_y)
+		--pos.y = pos.y - (pos.y/100)
+		--print(action.x .. ", " .. action.y)
+		msg.post("/properties#gui", "mousepos", {x = pos.x, y = pos.y})
+		pos.z = 20
+		go.set_position(pos)
+	end
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end

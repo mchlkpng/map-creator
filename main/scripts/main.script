@@ -1,0 +1,63 @@
+local rendercam = require("rendercam.rendercam")
+local directory = sys.get_save_file("mpcreator", "directory.dir"):gsub("directory.dir", "")
+local globals = require "lua_modules.globals"
+
+
+
+function init(self)
+	--[[sys.save(directory .. "testfile.sum", {hi = "something", score = 4, ssn = 6940})
+	local file = io.open(directory .. "testfile.sum", "rb")
+	local inf = file:read("*a")
+	file:close()
+	for i = 1, string.len(inf) do
+		print(string.byte(inf, i))
+	end]]
+
+	self.colLoaded = nil
+	msg.post(".", "acquire_input_focus")
+	print("hi")
+	pcall(msg.post, "#proxy_mapcreator", "unload", {})
+	msg.post("/go1#scriptloader", "scriptinfo", {id = 3, type = "baka", scriptname = "script.lua", modname = "newMod", mapname = "newMap"})
+
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("touch") and action.pressed and not self.colLoaded then
+		print("Touch!")
+
+		if action.screen_x > 960 then
+			msg.post("#proxy_ingame", "load")
+		else
+			msg.post("#proxy_mapcreator", "load")
+		end
+	end
+
+	if action_id == hash("key_1") and action.pressed and not self.colLoaded then
+		msg.post("#proxy_mapcreator", "load")
+		print("we sus you opal your tasks are miles away we sus you opallll and in the skeld youll staaaaaaaaaaaaaaaaaaay")
+	end
+	if action_id == hash("key_2") and action.pressed and not self.colLoaded then
+		msg.post("#proxy_ingame", "load")
+		print("amogus")
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("proxy_loaded") then
+		go.set("/camera#script", "active", false)
+		msg.post(sender, "init")
+		msg.post(sender, "enable")
+		local collection = tostring(sender)
+		collection = string.gsub(collection, "url: %[main:/go#proxy_", "")
+		collection = string.gsub(collection, "%]", "")
+		msg.post(collection .. ":/jsonloader#json", "loadJson", {lvl = "mapEx"})
+		go.set(".", "position.z", -10001)
+		self.colLoaded = collection
+	end
+
+	if message_id == hash("proxy_unloaded") then
+		msg.post(sender, "disable")
+		msg.post(sender, "final")
+		msg.post(sender, "unload")
+	end
+end
