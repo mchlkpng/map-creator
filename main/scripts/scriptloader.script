@@ -68,23 +68,8 @@ function loadEnc(self, mod, fromHTTP, server, callback)
     end
 end
 
-function setTexture(self, name)
-    --if not 
-    if not self.textures then
-        print("id", self.id, msg.url())
-        go.set(".", "euler.z", 180)
-    end
-    if not self.textures[name] then
-        error("Texture '" .. name .. "' does not exist in textures.")
-        return
-    end
-    local texture = self.textures[name]
-    local imgRes = imageloader.load{
-        data = texture
-    }
-    enableSprite(imgRes.header.height)
-    resource.set_texture(go.get(self.curSprite, "texture0"), imgRes.header, imgRes.buffer)
-    self.currentTex = name
+function setTexture(name)
+    msg.post("#", "setTexture", {name = name})
 end
 
 --Loads mod script by filename
@@ -396,7 +381,7 @@ function cancel_anim()
     end
 end
 function move_by(var, num)
-    go.set(".", "position.".. string.lower(var), getVar("position")[var] + num)
+    go.set(".", "position.".. string.lower(var), go.get_position()[string.lower(var)] + num)
 end
 
 function move_to(x, y, z)
@@ -466,9 +451,12 @@ function on_message(self, message_id, message, sender)
             f()
             self.resources, self.collisions = loadResources()
             local sussyB = getTextures(self, self.resources, function(tex, anDe)
+                print("tex got")
                 self.resources.animations = anDe[1]
                 self.resources.defaultTex = anDe[2]
                 self.textures = tex
+                pprint(self.textures)
+
                 self.animations = self.resources.animations
                 local eee = getIKey(self.collisions, "hi.png")
                 globals.setCollision(self, eee)
@@ -478,30 +466,31 @@ function on_message(self, message_id, message, sender)
                     play_anim(self, self.defaultAnim, {"default"})
                 elseif self.resources.defaultTex then
                     self.defaultTex = self.resources.defaultTex
-                    setTexture(self, self.defaultTex)
+                    setTexture(self.defaultTex)
                 end
                 initialize()
                 self.scriptLoaded = true
             end)
-            if sussyB then self.textures = sussyB end
+            if sussyB then
+                print("hehe sussyB")
+                self.textures = sussyB
 
-            if self.textures then
-                if globals.tablelen(self.textures, false) ~= 0 then
-                    self.animations = self.resources.animations
-                    local eee = getIKey(self.collisions, "hi.png")
-                    globals.setCollision(self, eee)
-                    
-                    if self.animations.defaultAnim then
-                        self.defaultAnim = self.animations.defaultAnim
-                        play_anim(self, self.defaultAnim, {"default"})
-                    elseif self.resources.defaultTex then
-                        self.defaultTex = self.resources.defaultTex
-                        setTexture(self, self.defaultTex)
+                if self.textures then
+                    if globals.tablelen(self.textures, false) ~= 0 then
+                        self.animations = self.resources.animations
+                        local eee = getIKey(self.collisions, "hi.png")
+                        globals.setCollision(self, eee)
+                        
+                        if self.animations.defaultAnim then
+                            self.defaultAnim = self.animations.defaultAnim
+                            play_anim(self, self.defaultAnim, {"default"})
+                        elseif self.resources.defaultTex then
+                            self.defaultTex = self.resources.defaultTex
+                            setTexture(self, self.defaultTex)
+                        end
+                        initialize()
+                        self.scriptLoaded = true
                     end
-                    initialize()
-                    self.scriptLoaded = true
-                else
-                    print("There was a prolem loading textures.")
                 end
             end
         end)
@@ -511,6 +500,21 @@ function on_message(self, message_id, message, sender)
     if message_id == hash("setSprite") then
         setTexture(self, message.name)
     end
+
+    if message_id == hash("setTexture") then
+        name = message.name
+        if not self.textures[name] then
+            error("Texture '" .. name .. "' does not exist in textures.")
+            return
+        end
+        local texture = self.textures[name]
+        local imgRes = imageloader.load{
+            data = texture
+        }
+        enableSprite(imgRes.header.height)
+        resource.set_texture(go.get(self.curSprite, "texture0"), imgRes.header, imgRes.buffer)
+        self.currentTex = name
+    end
 end
 
 function update(self, dt)
@@ -519,13 +523,14 @@ function update(self, dt)
             upd(dt)
         end
     end
-
     function setVar(var, value)
         self[var] = value
     end
     function getVar(var)
-        return self[var]
+        local you = self
+        return you[var]
     end
+
 
 
 

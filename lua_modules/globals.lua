@@ -307,7 +307,8 @@ function globals.setCollision(self,COLLISION, negX, x, negY, y)
 						pos = vmath.vector3(position.x + xx, position.y + yy, position.z),
 						scale = escale
 					}
-					colboxes[xx .. "," .. yy] = factory.create("#collisionfactory", vmath.vector3(position.x + xx, position.y + yy , position.z), nil, nil, escale)
+					colboxes[xx .. "," .. yy] = factory.create("#collisionfactory", vmath.vector3(position.x + xx, position.y + yy , 0), nil, nil, escale)
+					msg.post(colboxes[xx .. "," .. yy], "relpos", {relpos = vmath.vector3(xx, yy, position.z), parId = go.get_id()})
 					--go.set_parent(".", colboxes[xx .. "," .. yy])
 				end
 			end
