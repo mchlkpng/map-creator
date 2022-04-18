@@ -1,17 +1,10 @@
 local globals = {}
-local hn = "localhost"
+local hn = "http://localhost"
 local con = sys.get_ifaddrs()
-for i, v in ipairs(con) do
-		http.request("http://" .. v.address .. ":2567/allgood", "GET", function(self, id, response) 
-			if status == 200 or 301 and response.response == "All good!" then
-				hn = v.address
-				print("server up at " .. self.host .. ":2567")
-				break
-			else
-				print("server not running on " .. v.address)
-			end
-		end)
-	end
+
+function globals.setHost(host)
+	hn = host
+end
 
 --less gooo
 function globals.directory()
@@ -67,6 +60,13 @@ function globals.encrypt(str, sn)
 	local ran2 = math.floor(math.random()*10)
 	fin = string.char(sn) .. fin
 	return fin
+end
+
+function globals.hash_to_string(h)
+	local str = string.gsub(tostring(h), "hash: %[", "")
+	str = string.gsub(str, "%]", "")
+	print(str)
+	return str
 end
 
 function globals.decrypt(str)
@@ -142,7 +142,7 @@ end
 function globals.hostname(withPort)
 	local hostname = hn
 	if withPort then 
-		return hostname .. ":" .. port 
+		return hostname .. ":" .. 2567
 	else 
 		return hostname 
 	end
@@ -316,6 +316,8 @@ function globals.setCollision(self,COLLISION, negX, x, negY, y)
 	return colboxes, colboxinfo
 end
 
+return globals
+
 --[[function globals.setCollision(url, collision, collisionGroups, collisionMasks)
 	globals.collisions[url] = {group = collisionGroups, mask = collisionMasks, collision = collision}
 
@@ -324,4 +326,4 @@ end
 		for j, w in ipairs(globals.collisionGroups) do
 			if v == w then
 				table.insert(glthen
-				table.insert(gl
+				table.insert(gl]]

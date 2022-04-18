@@ -5,6 +5,7 @@ local globals = require "lua_modules.globals"
 
 
 function init(self)
+	print(directory)
 	--[[sys.save(directory .. "testfile.sum", {hi = "something", score = 4, ssn = 6940})
 	local file = io.open(directory .. "testfile.sum", "rb")
 	local inf = file:read("*a")

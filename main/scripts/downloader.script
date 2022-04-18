@@ -20,7 +20,10 @@ Example: msg.post("#", "encMod", mod = [modname], encNum = [encryptionSeedNumber
 ]]
 
 function init(self)
-	--globals.getEncrypted("oldMod", false)
+	--msg.post("#", "encMod", {server = globals.hostname(true), mod = "oldMod", encNum = 2})
+	--[[globals.getEncrypted("oldMod", true, globals.hostname(true), function(id, reponse, decTb)
+		pprint(decTb)
+	end)]]
 	--timer.delay(1, false, function()msg.post("#", "encModDisk", {mod = "oldMod2", encNum = 2})end)
 end
 
