@@ -78,7 +78,7 @@ end
 
 function on_input(self, action_id, action)
 	if action_id == hash("key_up") and self.coldown then
-		self.grav = 1750
+		self.grav = 1000
 		local pos = go.get_position()
 		go.set_position(vmath.vector3(pos.x, pos.y + 19, pos.z))
 	end
