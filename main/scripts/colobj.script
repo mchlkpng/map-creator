@@ -22,7 +22,6 @@ end
 
 function on_message(self, message_id, message, sender)
 	if message_id == hash("relpos") then
-		print(message.relpos)
 		go.set_parent(go.get_id(), message.parId, true)
 		--go.set_position(message.relpos)
 	end

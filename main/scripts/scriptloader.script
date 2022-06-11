@@ -10,9 +10,17 @@ local sysType
 local sprites = {
     16, 32, 64, 128, 256, 512, 1024, 2048
 }
+local takenTextures = {}
+local ttByName = {}
+local loadedFiles = {}
+local alloc
 
-function setSprite(name)
-    msg.post("#", "setSprite", {name = name})
+
+function setSprite(fullId)
+    local id = string.match(fullId, ":%a+"):gsub(":", "")
+    local sheet = string.gsub(fullId, ":"..id, "")
+    print("sheet", sheet)
+    msg.post("#", "setSprite", {sheet = sheet, id = id})
 end
 
 if system == "Windows" or "Darwin" or "Linux" then
@@ -83,6 +91,11 @@ function loadScript(self, scrname, callback)
     local fl2 = "mods/" .. self.modname .. "/" .. self.type .. "_" .. scrname
     if self.fromDir then
         path = directory .. fl
+        if loadedFiles[path] then
+            callback(loadedFiles[path])
+            return
+        end
+        
         local file = io.open(path, "r") or io.open(directory .. fl2, "r")
         if not file and io.open(directory .. "mods/" .. self.modname .. "/" .. self.modname .. ".encr", "rb") then
             io.close()
@@ -100,6 +113,11 @@ function loadScript(self, scrname, callback)
         if not ret then
             error("Function or module '" .. mod .. "' might have been called on line " .. line .. " of script '" .. scrname .. "'.")
         else
+            if type(loadstring(script)) ~= "function" then
+                print(loadstring(script))
+            end
+            
+            loadedFiles[path] = script
             callback(loadstring(script))
             return
         end
@@ -123,6 +141,7 @@ function loadScript(self, scrname, callback)
                     end
                 else
                     print("Couldn't download '" .. self.modname .. ".encr'. Error Code: " .. response.status)
+                    if loadedFiles[fl] then callback(loadedFiles[fl]) return end
                     local worked = pcall(http.request, globals.hostname(true) .. "/" .. fl, "GET", function(sel2, iD, res)
                         if res.status == 200 or res.status == 304 then
                             script = res.response
@@ -136,6 +155,11 @@ function loadScript(self, scrname, callback)
                             if not ret then
                                 error("Function or module '" .. mod .. "' might have been called on line " .. line .. " of script '" .. scrname .. "'.")
                             else
+                                if type(loadstring(script)) ~= "function" then
+                                    print(loadstring(script))
+                                end
+
+                                loadedFiles[fl] = script
                                 callback(loadstring(script))
                                 return
                             end
@@ -151,6 +175,35 @@ function loadScript(self, scrname, callback)
 
         if not worked2 then
             
+        end
+    end
+end
+
+function getSprites(self, spriteSheets, textures, allocs)
+    local using
+    local res
+    for i, v in pairs(spriteSheets) do
+        for j, w in ipairs(v) do
+            for k = 1, 16 do
+                local checking = string.gsub(i, "_", "").."_"..tostring(k)
+                res = string.gsub(checking, "px_" .. tostring(k), "")
+                if takenTextures[checking] == nil then
+                    using = checking
+                    break
+                else
+                    print("No texture spot left for this resolution (" .. tostring(res) .. ")")
+                    pprint(takenTextures)
+                    return
+                end
+                if using then break end
+            end
+            go.set("#sprite", "image", hash("/main/atlases/pix/" .. res .. "px/" .. using .. ".texturesetc"))
+            local ee = imageloader.load{data = textures[w]}
+            resource.set_texture(go.get("#sprite", "texture0"), ee.header, ee.buffer)
+            takenTextures[using] = w
+            ttByName[w] = "_"..using
+            self.currentTex = using
+            self.res = res
         end
     end
 end
@@ -449,24 +502,27 @@ function on_message(self, message_id, message, sender)
 
         loadScript(self, message.scriptname, function(f)
             f()
-            self.resources, self.collisions = loadResources()
+            self.resources, self.collisions, self.spriteSheets, self.sheetAlloc = loadResources()
             local sussyB = getTextures(self, self.resources, function(tex, anDe)
                 print("tex got")
                 self.resources.animations = anDe[1]
                 self.resources.defaultTex = anDe[2]
                 self.textures = tex
                 pprint(self.textures)
+                getSprites(self, self.spriteSheets, self.textures, self.sheetAlloc)
 
                 self.animations = self.resources.animations
-                local eee = getIKey(self.collisions, "hi.png")
+                local eee = getIKey(self.collisions, self.resources.defaultTex)
                 globals.setCollision(self, eee)
+
+                
 
                 if self.animations.defaultAnim then
                     self.defaultAnim = self.animations.defaultAnim
                     play_anim(self, self.defaultAnim, {"default"})
                 elseif self.resources.defaultTex then
                     self.defaultTex = self.resources.defaultTex
-                    setTexture(self.defaultTex)
+                    setSprite(self.defaultTex)
                 end
                 initialize()
                 self.scriptLoaded = true
@@ -476,6 +532,9 @@ function on_message(self, message_id, message, sender)
                 self.textures = sussyB
 
                 if self.textures then
+
+                    getSprites(self, self.spriteSheets, self.textures, self.sheetAlloc)
+                    
                     if globals.tablelen(self.textures, false) ~= 0 then
                         self.animations = self.resources.animations
                         local eee = getIKey(self.collisions, "hi.png")
@@ -486,7 +545,7 @@ function on_message(self, message_id, message, sender)
                             play_anim(self, self.defaultAnim, {"default"})
                         elseif self.resources.defaultTex then
                             self.defaultTex = self.resources.defaultTex
-                            setTexture(self, self.defaultTex)
+                            setSprite(self.defaultTex)
                         end
                         initialize()
                         self.scriptLoaded = true
@@ -494,11 +553,6 @@ function on_message(self, message_id, message, sender)
                 end
             end
         end)
-    end
-
-
-    if message_id == hash("setSprite") then
-        setTexture(self, message.name)
     end
 
     if message_id == hash("setTexture") then
@@ -511,9 +565,23 @@ function on_message(self, message_id, message, sender)
         local imgRes = imageloader.load{
             data = texture
         }
-        enableSprite(imgRes.header.height)
+       -- enableSprite(imgRes.header.height)
         resource.set_texture(go.get(self.curSprite, "texture0"), imgRes.header, imgRes.buffer)
         self.currentTex = name
+    end
+--sets sprite
+    if message_id == hash("setSprite") then
+        --message = {sheet, id}
+        if self.currentTex ~= message.sheet then
+            pprint(ttByName)
+            pprint(self.spriteSheets)
+            go.set("#sprite", "image", hash("/main/atlases/pix/" .. self.res .. "px/" .. self.currentTex .. ".texturesetc"))
+        end
+        for i, v in ipairs(self.sheetAlloc[message.sheet]) do
+            if v == message.id then
+                sprite.play_flipbook("#sprite", "128px_"..tostring(i))
+            end
+        end
     end
 end
 

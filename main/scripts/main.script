@@ -3,7 +3,6 @@ local directory = sys.get_save_file("mpcreator", "directory.dir"):gsub("director
 local globals = require "lua_modules.globals"
 
 
-
 function init(self)
 	print(directory)
 	--[[sys.save(directory .. "testfile.sum", {hi = "something", score = 4, ssn = 6940})
@@ -13,12 +12,20 @@ function init(self)
 	for i = 1, string.len(inf) do
 		print(string.byte(inf, i))
 	end]]
-
 	self.colLoaded = nil
 	msg.post(".", "acquire_input_focus")
 	print("hi")
 	pcall(msg.post, "#proxy_mapcreator", "unload", {})
 	msg.post("/go1#scriptloader", "scriptinfo", {id = 3, type = "baka", scriptname = "script.lua", modname = "newMod", mapname = "newMap"})
+	--[[local f = io.open(directory .. "128px_1_copy.atlas", "r")
+	local inf = f:read("*a")
+	f:close()
+	for i = 1, 16 do
+		local f = io.open(directory .. "128px_"..tostring(i)..".atlas", "w")
+		f:write(inf)
+		f:flush()
+		f:close()
+	end]]
 
 end
 
