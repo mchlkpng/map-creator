@@ -11,13 +11,13 @@ local function loadJson(self, mapName, jsonData, fromDir, callback)
 	pprint(jtable.mods)
 	local data = jtable[mapName].data
 	msg.post("/objManager#script", "tabledatalen", {len = #data, fromDir = fromDir, collection = select(2, getCamId())})
+	callback(jtable)
 	for i, v in ipairs(data) do
 		local url = msg.url("/" .. v.type .. "_spawner" .. "#script")
 		msg.post(url, "spawn", {key = i, val = v, mode = select(2, getCamId()), mapname = mapName})
 	end
 
 
-	callback(j_table)
 	--pprint(self.jsonTable)
 end
 
@@ -40,6 +40,7 @@ local function loadLevel(self, lvl, fromDir, callback)
 --	pprint(jtable[mapName]["data"])
 	local data = jtable[mapName].data
 	msg.post("/objManager#script", "tabledatalen", {len = #data, fromDir = fromDir, collection = select(2, getCamId())})
+	callback(jtable)
 	for i, v in ipairs(data) do
 		local url = msg.url("/" .. v.type .. "_spawner" .. "#script")
 		msg.post(url, "spawn", {key = i, val = v, mode = select(2, getCamId()), lvl = lvl})
@@ -47,7 +48,6 @@ local function loadLevel(self, lvl, fromDir, callback)
 
 
 
-	callback(jtable)
 end
 
 function getCamId()
@@ -125,6 +125,11 @@ function on_message(self, message_id, message, sender)
 
 	if message_id == hash("getcollection") then
 		msg.post(sender, "collection", {col = select(2, getCamId())})
+	end
+
+	if message_id == hash("getserver") then
+		pprint("json", self.jsonTable)
+		msg.post(sender, "daserver", {server = self.jsonTable.modservers[message.mod]})
 	end
 end
 

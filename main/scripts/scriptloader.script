@@ -19,7 +19,6 @@ local alloc
 function setSprite(fullId)
     local id = string.match(fullId, ":%a+"):gsub(":", "")
     local sheet = string.gsub(fullId, ":"..id, "")
-    print("sheet", sheet)
     msg.post("#", "setSprite", {sheet = sheet, id = id})
 end
 
@@ -133,7 +132,7 @@ function loadScript(self, scrname, callback)
     else
         --if not loading mod from directory, it tries to download .encr file. If that doesn't exist,
         --it tries to download the script directly from the server.
-            local worked2 = pcall(loadEnc, self, self.modname, true, globals.hostname(true), function(id, response, decTb)
+            local worked2 = pcall(loadEnc, self, self.modname, true, self.modserver, function(id, response, decTb)
                 if response.status == 200 or response.status == 304 then
                     script = decTb[scrname]
                     if script:byte(1) == 27 then
@@ -163,7 +162,7 @@ function loadScript(self, scrname, callback)
                         return
                     end
                     
-                    local worked = pcall(http.request, globals.hostname(true) .. "/" .. fl, "GET", function(sel2, iD, res)
+                    local worked = pcall(http.request, self.modserver .. "/" .. fl, "GET", function(sel2, iD, res)
                         if res.status == 200 or res.status == 304 then
                             script = res.response
 
@@ -340,11 +339,10 @@ function getTextures(self, files, callback)
     if ffiles.defaultTex then
         ffiles.defaultTex = nil
     end
-    print(ffiles.defaultSprite)
+
     if ffiles.defaultSprite then
         ffiles.defaultSprite = nil
     end
-    pprint(ffiles)
     
     local ttable = {}
     for i, v in ipairs(ffiles) do
@@ -384,7 +382,7 @@ function getTextures(self, files, callback)
                 
             else
                 local dtable = {}
-                local worked2 = pcall(loadEnc, self, self.modname, true, globals.hostname(true), function(id, response, decTb)
+                local worked2 = pcall(loadEnc, self, self.modname, true, self.modserver, function(id, response, decTb)
                     if response.status == 200 or response.status == 304 then
                        texture = decTb[v]
                        ttable[v] = texture
@@ -400,7 +398,7 @@ function getTextures(self, files, callback)
                             texture = loadedFiles[fl]
                             ttable[v] = texture
                         else
-                            local worked = pcall(http.request, globals.hostname(true) .. "/" .. fl, "GET", function(self, id, res)
+                            local worked = pcall(http.request, self.modserver .. "/" .. fl, "GET", function(self, id, res)
                                 if res.status == 200 or res.status == 304 then
                                     texture = res.response
                                     ttable[v] = texture
@@ -613,10 +611,10 @@ function on_message(self, message_id, message, sender)
     --gets info for script
     if message_id == hash("data") then
         self.fromDir = go.get("/objManager#script", "fromDir")
-        
         self.mode = message.mode
         self.extraData = message.extradata
         self.typedata = message.typedata
+
         msg.post("#", "scriptinfo", {id = message.id, type = self.typedata.modtype, modname = self.typedata.mod, mapname = message.mapname, scriptname = self.typedata.script})
         self.events = message.events
         self.eventListeners = message.eventListeners
@@ -635,6 +633,7 @@ function on_message(self, message_id, message, sender)
         self.type = message.type
         mapname = message.mapname
         self.modname = message.modname
+        msg.post("/jsonloader#json", "getserver", {mod = self.modname})
 
         loadScript(self, message.scriptname, function(f)
             f()
@@ -701,7 +700,7 @@ function on_message(self, message_id, message, sender)
 
         local texname = ttByName[name]
         local tinf = takenTextures[texname]
-        pprint(tinf)
+
         go.set("#sprite", "image", hash("/main/atlases/pix/" .. tinf.res .. "px/" .. texname .. ".texturesetc"))
         self.currentTex = name
     end
@@ -715,7 +714,7 @@ function on_message(self, message_id, message, sender)
         else
             sheet = message.sheet
         end
-        print(self.currentTex)
+
         if self.currentTex ~= sheet then
             setTexture(sheet)
         end
@@ -723,6 +722,17 @@ function on_message(self, message_id, message, sender)
         for i, v in ipairs(self.sheetAlloc[sheet]) do
             if v == message.id then
                 sprite.play_flipbook("#sprite", "128px_"..tostring(i))
+            end
+        end
+    end
+
+    if message_id == hash("daserver") then
+        if message.server == "mainserver" then
+            self.modserver = globals.hostname(true)
+        else
+            self.modserver = message.server
+            if string.sub(self.modserver, -1) == "/" then
+                self.modserver = string.sub(self.modserver, 1, -2)
             end
         end
     end
