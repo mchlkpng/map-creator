@@ -65,12 +65,21 @@ end
 -- gets mod .encr file from requested server. If the encr file is already loaded in game, it just uses that instead of wasting time decrypting.
 function loadEnc(self, mod, fromHTTP, server, callback)
     if encMods[mod] then
-        print("'" .. mod .. "' is already loaded.")
-        if callback then callback("idklol", {status = 200, response = "your mum"}, encMods[mod]) end
-        return encMods[mod]
+        if callback then
+            if encMods[mod] == 404 then
+                callback("idklol", {status = 404, response = "your dad"}, nil)
+            else
+                print("'"..mod.."' is already loaded.")
+                callback("idklol", {status = 200, response = "your mum"}, encMods[mod])
+            end
+        end
+        if encMods[mod] == 404 then return nil else return encMods[mod] end
     else
         encMods[mod] = globals.getEncrypted(mod, fromHTTP, server, function(id, response, tb) 
             encMods[mod] = tb
+            if response.status == 404 then
+                encMods[mod] = 404
+            end
             callback(id, response, tb) end)
         if not callback then return encMods[mod] end
     end
@@ -136,12 +145,24 @@ function loadScript(self, scrname, callback)
                     if not ret then
                         error("Function or module '" .. mod .. "' might have been called on line " .. line .. " of script '" .. scrname .. "'.")
                     else
+                        if type(loadstring(script)) ~= "function" then
+                            print(loadstring(script))
+                        end
+
+                        loadedFiles[fl] = script
                         callback(loadstring(script))
                         return
                     end
                 else
                     print("Couldn't download '" .. self.modname .. ".encr'. Error Code: " .. response.status)
-                    if loadedFiles[fl] then callback(loadedFiles[fl]) return end
+                    if loadedFiles[fl] then 
+                        if type(loadstring(loadedFiles[fl])) ~= "function" then
+                            print(loadstring(loadedFiles[fl]))
+                        end
+                        callback(loadstring(loadedFiles[fl]))
+                        return
+                    end
+                    
                     local worked = pcall(http.request, globals.hostname(true) .. "/" .. fl, "GET", function(sel2, iD, res)
                         if res.status == 200 or res.status == 304 then
                             script = res.response
@@ -179,33 +200,126 @@ function loadScript(self, scrname, callback)
     end
 end
 
+--[[
+checkTexIfSame -- Checks if the texture youre adding already exists or if there is a seperate texture with the same mapname
+    texname (string) - name of the new texture you want to add
+    tex (string of data) - the texture data of the new texture you want to add
+    ttex (table) - the atlas you want to check out from the takenTextures table
+
+returns:
+    same (boolean) - if the textures are the exact same (name + data)
+    diff (string) - only returned if same is false. If they have the same name, returns "same name". If they aren't the same at all, returns "no sim".
+    "same data" for same data.
+]]
+function checkTexIfSame(texname, tex, ttex)
+    if texname == ttex.texName then
+        if tex == ttex.texture then
+            return true
+        else
+            return false, "same name"
+        end
+    else
+        if tex == ttex.texture then
+            return false, "same data"
+        else
+            return false, "no sim"
+        end
+    end
+end
+
 function getSprites(self, spriteSheets, textures, allocs)
     local using
     local res
+    local needtosave = {}
     for i, v in pairs(spriteSheets) do
         for j, w in ipairs(v) do
             for k = 1, 16 do
                 local checking = string.gsub(i, "_", "").."_"..tostring(k)
                 res = string.gsub(checking, "px_" .. tostring(k), "")
-                if takenTextures[checking] == nil then
+
+                if not takenTextures[checking] then
                     using = checking
                     break
-                else
-                    print("No texture spot left for this resolution (" .. tostring(res) .. ")")
-                    pprint(takenTextures)
-                    return
                 end
+
+
+                local same, diff = checkTexIfSame(w, textures[w], takenTextures[checking])
+                if same then
+                    print("texture '" .. w .. "' already exits. Using texture.")
+                    using = "exists"
+                    break
+                elseif not same and diff == "same data" then
+                    print("A texture under a different name has the same image data! Using that instead.")
+                    ttByName[w] = checking
+                    using = "exists"
+                    break
+                elseif not same and diff == "same name" then
+                    print("Theres already a texture with this name! Don't worry, we're saving it as '" .. self.modname.."-".. w .. "' so it can still be used.")
+                    table.insert(needtosave, {name = self.modname.."-"..w, texName = w, texture = texture[w]})
+                    break
+                end
+
+                
                 if using then break end
             end
-            go.set("#sprite", "image", hash("/main/atlases/pix/" .. res .. "px/" .. using .. ".texturesetc"))
-            local ee = imageloader.load{data = textures[w]}
-            resource.set_texture(go.get("#sprite", "texture0"), ee.header, ee.buffer)
-            takenTextures[using] = w
-            ttByName[w] = "_"..using
-            self.currentTex = using
-            self.res = res
+            if using ~= "exists" then
+                if using then
+                    go.set("#sprite", "image", hash("/main/atlases/pix/" .. res .. "px/" .. using .. ".texturesetc"))
+                    local ee = imageloader.load{data = textures[w]}
+                    resource.set_texture(go.get("#sprite", "texture0"), ee.header, ee.buffer)
+                    takenTextures[using] = {texName = w, res = res, texture = self.textures[w], alloc = allocs[w], mod = self.modname}
+                    ttByName[w] = using
+                else
+                    print("No atlases left for resolution " .. res .. " or this name already exists.")
+                end
+            end
+        end
+        
+        if #needtosave ~= 0 then
+            for j, w in ipairs(needtosave) do
+                for k = 1, 16 do
+                    local checking = string.gsub(i, "_", "").."_"..tostring(k)
+                    res = string.gsub(checking, "px_" .. tostring(k), "")
+
+                    if not takenTextures[checking] then
+                        using = checking
+                        break
+                    end
+
+
+                    local same, diff = checkTexIfSame(w.name, w.texture, takenTextures[checking])
+                    if same then
+                        print("texture '" .. w.name .. "' already exits. Using texture.")
+                        using = "exists"
+                        break
+                    elseif not same and diff == "same name" then
+                        print("Theres already a texture with this name! (" .. w.name .. ")")
+                        break
+                    elseif not same and diff == "same data" then
+                        print("A texture under a different name has the same image data! Using that instead.")
+                        ttByName[w.name] = checking
+                        using = "exists"
+                        break
+                    end
+                    if using then break end
+                end
+                if using ~= "exists" then
+                    if using then
+                        go.set("#sprite", "image", hash("/main/atlases/pix/" .. res .. "px/" .. using .. ".texturesetc"))
+                        local ee = imageloader.load{data = textures[w.texName]}
+                        resource.set_texture(go.get("#sprite", "texture0"), ee.header, ee.buffer)
+                        takenTextures[using] = {texName = w.name, res = res, texture = self.textures[w.texName], alloc = allocs[w.texName], mod = self.modname}
+                        ttByName[w.name] = using
+                    else
+                        print("No atlases left for resolution " .. res .. " or this name already exists.")
+                    end
+                end
+            end
         end
     end
+
+
+    
 end
 
 
@@ -219,13 +333,18 @@ function getTextures(self, files, callback)
         error("Input must be a table!")
         return
     end
-    local anAndD = {ffiles.animations, ffiles.defaultTex}
+    local anAndD = {ffiles.animations, ffiles.defaultTex, ffiles.defaultSprite}
     if ffiles.animations then
         ffiles.animations = nil
     end
     if ffiles.defaultTex then
         ffiles.defaultTex = nil
     end
+    print(ffiles.defaultSprite)
+    if ffiles.defaultSprite then
+        ffiles.defaultSprite = nil
+    end
+    pprint(ffiles)
     
     local ttable = {}
     for i, v in ipairs(ffiles) do
@@ -239,24 +358,32 @@ function getTextures(self, files, callback)
             local fl2 = "mods/" .. self.modname .. "/" .. self.type .. "_" .. v
             local texture = ""
             if self.fromDir then
-                path = directory .. fl
-                local file = io.open(path, "rb") or io.open(directory .. fl2, "rb")
-                if not file and io.open(directory .. "mods/" .. self.modname .. "/" .. self.modname .. ".encr", "rb") then
-                    io.close()
-                    texture = loadEnc(self, self.modname, false)["/" .. self.modname .. "/" .. self.type .. "/" .. v]
+                if loadedFiles[fl] then
+                    texture = loadedFiles[fl]
                     ttable[v] = texture
                 else
-                    texture = file:read("*a")
-                    file:close()
-                    ttable[v] = texture
+                    path = directory .. fl
+                    local file = io.open(path, "rb") or io.open(directory .. fl2, "rb")
+                    if not file and io.open(directory .. "mods/" .. self.modname .. "/" .. self.modname .. ".encr", "rb") then
+                        io.close()
+                        texture = loadEnc(self, self.modname, false)["/" .. self.modname .. "/" .. self.type .. "/" .. v]
+                        ttable[v] = texture
+                    else
+                        texture = file:read("*a")
+                        file:close()
+                        ttable[v] = texture
+                        loadedFiles[fl] = texture
+                    end
                 end
                 if globals.tablelen(ttable, false) == globals.tablelen(ffiles, false) then
                     ffiles.animations = anAndD[1]
                     ffiles.defaultTex = anAndD[2]
+                    ffiles.defaultSprite = anAndD[3]
                     return ttable
                 end
                 
             else
+                local dtable = {}
                 local worked2 = pcall(loadEnc, self, self.modname, true, globals.hostname(true), function(id, response, decTb)
                     if response.status == 200 or response.status == 304 then
                        texture = decTb[v]
@@ -264,24 +391,33 @@ function getTextures(self, files, callback)
                        if globals.tablelen(ttable, false) == globals.tablelen(ffiles, false) then
                            ffiles.animations = anAndD[1]
                            ffiles.defaultTex = anAndD[2]
-                           callback(ttable, anAndD)
+                           ffiles.defaultSprite = anAndD[3]
+                            callback(ttable, anAndD)
                        end
                     else
                         print("Couldn't get encr file of '" .. self.modname .. "'. Error Code: " .. response.status)
-                        local worked = pcall(http.request, globals.hostname(true) .. "/" .. fl, "GET", function(self, id, res)
-                            if res.status == 200 or res.status == 304 then
-                                texture = res.response
-                                ttable[v] = texture
-                                if globals.tablelen(ttable, false) == globals.tablelen(ffiles, false) then
-                                    ffiles.animations = anAndD[1]
-                                    ffiles.defaultTex = anAndD[2]
-                                    callback(ttable, anAndD)
+                        if loadedFiles[fl] then
+                            texture = loadedFiles[fl]
+                            ttable[v] = texture
+                        else
+                            local worked = pcall(http.request, globals.hostname(true) .. "/" .. fl, "GET", function(self, id, res)
+                                if res.status == 200 or res.status == 304 then
+                                    texture = res.response
+                                    ttable[v] = texture
+                                    loadedFiles[fl] = texture
+
+                                    if globals.tablelen(ttable, false) == globals.tablelen(ffiles, false) then
+                                        ffiles.animations = anAndD[1]
+                                        ffiles.defaultTex = anAndD[2]
+                                        ffiles.defaultSprite = anAndD[3]
+                                        callback(ttable, anAndD)
+                                    end
+                                else
+                                    print("Couldn't download '" .. v .. "'.")
                                 end
-                            else
-                                print("Couldn't download '" .. v .. "'.")
-                            end
-                            
-                        end)
+                            end)
+                        end
+                        
                     end
                 end)
             end
@@ -507,22 +643,23 @@ function on_message(self, message_id, message, sender)
                 print("tex got")
                 self.resources.animations = anDe[1]
                 self.resources.defaultTex = anDe[2]
+                self.resources.defaultSprite = anDe[3]
                 self.textures = tex
-                pprint(self.textures)
+                pprint("textures", self.textures)
                 getSprites(self, self.spriteSheets, self.textures, self.sheetAlloc)
 
                 self.animations = self.resources.animations
-                local eee = getIKey(self.collisions, self.resources.defaultTex)
+
+                local eee = getIKey(self.collisions, self.resources.defaultSprite)
                 globals.setCollision(self, eee)
 
-                
 
                 if self.animations.defaultAnim then
                     self.defaultAnim = self.animations.defaultAnim
                     play_anim(self, self.defaultAnim, {"default"})
                 elseif self.resources.defaultTex then
                     self.defaultTex = self.resources.defaultTex
-                    setSprite(self.defaultTex)
+                    setSprite(self.resources.defaultSprite)
                 end
                 initialize()
                 self.scriptLoaded = true
@@ -537,7 +674,7 @@ function on_message(self, message_id, message, sender)
                     
                     if globals.tablelen(self.textures, false) ~= 0 then
                         self.animations = self.resources.animations
-                        local eee = getIKey(self.collisions, "hi.png")
+                        local eee = getIKey(self.collisions, self.resources.defaultSprite)
                         globals.setCollision(self, eee)
                         
                         if self.animations.defaultAnim then
@@ -545,7 +682,7 @@ function on_message(self, message_id, message, sender)
                             play_anim(self, self.defaultAnim, {"default"})
                         elseif self.resources.defaultTex then
                             self.defaultTex = self.resources.defaultTex
-                            setSprite(self.defaultTex)
+                            setSprite(self.resources.defaultSprite)
                         end
                         initialize()
                         self.scriptLoaded = true
@@ -561,23 +698,29 @@ function on_message(self, message_id, message, sender)
             error("Texture '" .. name .. "' does not exist in textures.")
             return
         end
-        local texture = self.textures[name]
-        local imgRes = imageloader.load{
-            data = texture
-        }
-       -- enableSprite(imgRes.header.height)
-        resource.set_texture(go.get(self.curSprite, "texture0"), imgRes.header, imgRes.buffer)
+
+        local texname = ttByName[name]
+        local tinf = takenTextures[texname]
+        pprint(tinf)
+        go.set("#sprite", "image", hash("/main/atlases/pix/" .. tinf.res .. "px/" .. texname .. ".texturesetc"))
         self.currentTex = name
     end
---sets sprite
+
+    --sets sprite , message = {sheet, id}
+
     if message_id == hash("setSprite") then
-        --message = {sheet, id}
-        if self.currentTex ~= message.sheet then
-            pprint(ttByName)
-            pprint(self.spriteSheets)
-            go.set("#sprite", "image", hash("/main/atlases/pix/" .. self.res .. "px/" .. self.currentTex .. ".texturesetc"))
+        local sheet
+        if ttByName[self.modname .. "-"..message.sheet] then
+            sheet = self.modname .. "-" .. message.sheet
+        else
+            sheet = message.sheet
         end
-        for i, v in ipairs(self.sheetAlloc[message.sheet]) do
+        print(self.currentTex)
+        if self.currentTex ~= sheet then
+            setTexture(sheet)
+        end
+
+        for i, v in ipairs(self.sheetAlloc[sheet]) do
             if v == message.id then
                 sprite.play_flipbook("#sprite", "128px_"..tostring(i))
             end
