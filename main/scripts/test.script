@@ -48,17 +48,24 @@ function init(self)
 	--	globals.setCollision(msg.url(), self.collision, {"platform"}, {"player"})
 
 	local file = io.open(globals.directory() .. "aSpritesheet.png", "rb")
-	local dat = file:read("*a")
-	file:close()
-	local imgRes = imageloader.load{data = dat}
-	resource.set_texture(go.get("#sprite", "texture0"), imgRes.header, imgRes.buffer)
+	if file then
+		local dat = file:read("*a")
+		file:close()
+		local imgRes = imageloader.load{data = dat}
+		resource.set_texture(go.get("#sprite", "texture0"), imgRes.header, imgRes.buffer)
+		sprite.play_flipbook("#sprite", "128px_3")
+	else
+		print("no bi- files?")
+	end
+	
 	self.num = 1
 
-	timer.delay(1, true, function()
+	--[[timer.delay(1, true, function()
 		self.num = self.num + 1
 		if self.num > 16 then self.num = 1 end
 		sprite.play_flipbook("#sprite", hash("128px_" .. tostring(self.num)))
-	end)
+	end)]]
+	
 end
 
 function final(self)
@@ -68,6 +75,7 @@ function final(self)
 end
 
 function update(self, dt)
+	
 end
 
 function on_message(self, message_id, message, sender)

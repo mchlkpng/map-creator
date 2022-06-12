@@ -15,9 +15,17 @@ local ttByName = {}
 local loadedFiles = {}
 local alloc
 
+--[[
+Todo:
+remove all of the unnecessary sprites
+make sure that the modded object scripts can access their object's id
+get rid of that annoying line that is appearing for some reason
+
+]]
+
 
 function setSprite(fullId)
-    local id = string.match(fullId, ":%a+"):gsub(":", "")
+    local id = string.match(fullId, ":.+"):gsub(":", "")
     local sheet = string.gsub(fullId, ":"..id, "")
     msg.post("#", "setSprite", {sheet = sheet, id = id})
 end
@@ -37,7 +45,6 @@ end
 function defineVars(self)
     self.position = {x = 0, y = 0, z = 0}
     self.prevIn = {}
-    self.input = {}
     self.textures = {}
     self.modserver = globals.hostname(true)
     self.collisions = {}
@@ -47,7 +54,7 @@ function defineVars(self)
     self.scriptLoaded = false
     self.animTimer = nil
     self.currentTex = nil
-    self.curSprite = "#128"
+    self.vars = {}
 end
 
 function enableSprite(res)
@@ -58,6 +65,16 @@ function enableSprite(res)
         else
             msg.post("#" .. v, "disable")
         end
+    end
+end
+
+function stop_animation(self)
+    if self.animTimer then
+        timer.cancel(self.animTimer)
+        self.animTimer = nil
+        return true
+    else
+        return false
     end
 end
 
@@ -153,7 +170,7 @@ function loadScript(self, scrname, callback)
                         return
                     end
                 else
-                    print("Couldn't download '" .. self.modname .. ".encr'. Error Code: " .. response.status)
+                    --print("Couldn't download '" .. self.modname .. ".encr'. Error Code: " .. response.status)
                     if loadedFiles[fl] then 
                         if type(loadstring(loadedFiles[fl])) ~= "function" then
                             print(loadstring(loadedFiles[fl]))
@@ -393,7 +410,7 @@ function getTextures(self, files, callback)
                             callback(ttable, anAndD)
                        end
                     else
-                        print("Couldn't get encr file of '" .. self.modname .. "'. Error Code: " .. response.status)
+                        --print("Couldn't get encr file of '" .. self.modname .. "'. Error Code: " .. response.status)
                         if loadedFiles[fl] then
                             texture = loadedFiles[fl]
                             ttable[v] = texture
@@ -429,9 +446,13 @@ function getTextures(self, files, callback)
     end)
 end
 
+function play_anim(id, tb, callback)
+    msg.post("#", "play_anim", {id = id, tb = tb, callback = callback})
+end
+
 --Plays animation by ID set in 'animations' table
-function play_anim(self, id, tb, callback)
-    cancel_anim()
+function animate(self, id, tb, callback)
+    stop_animation(self)
     local framerate, playback
     if tb[1] == "default" and #tb == 1 then
         framerate = self.animations[id].framerate
@@ -454,45 +475,45 @@ function play_anim(self, id, tb, callback)
     local frames = self.animations[id].frames
     if playback:find("ONCE") then
         if playback:find("FORWARD") then
-            setTexture(self, frames[1])
+            setSprite(frames[1])
             local frame = 1
-            animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
+            self.animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
                 frame = frame + 1
                 if frame > #frames then
                     if callback then callback() end
-                    animTimer = nil
+                    self.animTimer = nil
                     timer.cancel(handle)
                 else
-                    setTexture(self, frames[frame])
+                    setSprite(frames[frame])
                 end
             end)
         elseif playback:find("BACKWARD") then
             local frame = #frames
-            setTexture(self, frames[frame])
-            animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
+            setSprite(frames[frame])
+            self.animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
                 frame = frame - 1
                 if frame == 0 then
                     if callback then callback() end
-                    animTimer = nil
+                    self.animTimer = nil
                     timer.cancel(handle)
                 else
-                    setTexture(self, frames[frame])
+                    setSprite(frames[frame])
                 end
             end)
         elseif playback:find("PINGPONG") then
             local frame = 1
-            setTexture(self, frames[1])
-            animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
+            setSprite(frames[1])
+            self.animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
                 if frame > #frames then
                     if frame > #frames*2 -1 then
                         if callback then callback() end
-                        animTimer = nil
+                        self.animTimer = nil
                         timer.cancel(handle)
                     else
-                            setTexture(self, frames[frame - #frames])
+                            setSprite(frames[frame - #frames])
                     end
                 else
-                    setTexture(self, frames[frame])
+                    setSprite(frames[frame])
                 end
             end)
         end
@@ -500,42 +521,42 @@ function play_anim(self, id, tb, callback)
 
     if playback:find("LOOP") then
         if playback:find("FORWARD") then
-            setTexture(self, frames[1])
+            setSprite(frames[1])
             local frame = 1
-            animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
+            self.animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
                 frame = frame + 1
                 if frame > #frames then
                     if callback then callback() end
                     frame = 1
                 end
                 
-                setTexture(self, frames[frame])
+                setSprite(frames[frame])
             end)
         elseif playback:find("BACKWARD") then
             local frame = #frames
-            setTexture(self, frames[frame])
-            animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
+            setSprite(frames[frame])
+            self.animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
                 frame = frame - 1
                 if frame == 0 then
                     if callback then callback() end
                     frame = #frames
                 end
                 
-                setTexture(self, frames[frame])
+                setSprite(frames[frame])
             end)
         elseif playback:find("PINGPONG") then
             local frame = 1
-            setTexture(self, frames[1])
-            animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
+            setSprite(frames[1])
+            self.animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
                 if frame > #frames then
                     if frame > #frames*2 -1 then
                         if callback then callback() end
                         frame = 1
                     else
-                            setTexture(self, frames[frame - #frames])
+                            setSprite(frames[frame - #frames])
                     end
                 else
-                    setTexture(self, frames[frame])
+                    setSprite(frames[frame])
                 end
             end)
         end
@@ -559,13 +580,7 @@ end
 
 --cancels current animation
 function cancel_anim()
-    if animTimer then
-        timer.cancel(animTimer)
-        animTimer = nil
-        return true
-    else
-        return false
-    end
+    msg.post("#", "cancel_anim")
 end
 function move_by(var, num)
     go.set(".", "position.".. string.lower(var), go.get_position()[string.lower(var)] + num)
@@ -588,19 +603,25 @@ function init(self)
     self.type = nil
     --create get and set object properties functions
     function getProp(prop)
+        if prop == not("tint" or "position" or "scale" or "rotation") then
+            print(prop .. "isnt a property dummy")
+            return
+        end
         if prop ~= "tint" then
             local p = go.get(".", prop)
             return {x = p.x, y = p.y, z = p.z}
         else
-            local p = go get(self.curSprite, "tint")
+            local p = go get("#sprite", "tint")
             return {x = p.x, y = p.y, z = p.z, w = p.w}
         end
     end
     function setProp(prop, value)
-        if prop ~= "tint" then
+        if prop == "id" then
+            print("cannot change id")
+        elseif prop ~= "tint" then
             go.set(".", prop, vmath.vector3(value.x, value.y, value.z))
         else
-            go.set(self.curSprite, "tint", vmath.vector4(value.x, value.y, value.z, value.w))
+            go.set("#sprite", "tint", vmath.vector4(value.x, value.y, value.z, value.w))
         end
     end
 end
@@ -629,7 +650,7 @@ function on_message(self, message_id, message, sender)
     end
     
     if message_id == hash("scriptinfo") then
-        self.id = message.id
+        self.id = message.id; self.vars["id"] = self.id
         self.type = message.type
         mapname = message.mapname
         self.modname = message.modname
@@ -644,7 +665,6 @@ function on_message(self, message_id, message, sender)
                 self.resources.defaultTex = anDe[2]
                 self.resources.defaultSprite = anDe[3]
                 self.textures = tex
-                pprint("textures", self.textures)
                 getSprites(self, self.spriteSheets, self.textures, self.sheetAlloc)
 
                 self.animations = self.resources.animations
@@ -655,7 +675,7 @@ function on_message(self, message_id, message, sender)
 
                 if self.animations.defaultAnim then
                     self.defaultAnim = self.animations.defaultAnim
-                    play_anim(self, self.defaultAnim, {"default"})
+                    animate(self, self.defaultAnim, {"default"})
                 elseif self.resources.defaultTex then
                     self.defaultTex = self.resources.defaultTex
                     setSprite(self.resources.defaultSprite)
@@ -678,7 +698,7 @@ function on_message(self, message_id, message, sender)
                         
                         if self.animations.defaultAnim then
                             self.defaultAnim = self.animations.defaultAnim
-                            play_anim(self, self.defaultAnim, {"default"})
+                            animate(self, self.defaultAnim, {"default"})
                         elseif self.resources.defaultTex then
                             self.defaultTex = self.resources.defaultTex
                             setSprite(self.resources.defaultSprite)
@@ -716,12 +736,15 @@ function on_message(self, message_id, message, sender)
         end
 
         if self.currentTex ~= sheet then
+            print("ee")
+            pprint(sheet)
             setTexture(sheet)
         end
 
         for i, v in ipairs(self.sheetAlloc[sheet]) do
             if v == message.id then
                 sprite.play_flipbook("#sprite", "128px_"..tostring(i))
+                self.currentSprite = message.sheet .. ":" .. message.id
             end
         end
     end
@@ -736,41 +759,34 @@ function on_message(self, message_id, message, sender)
             end
         end
     end
+
+    if message_id == hash("cancel_anim") then
+        stop_animation(self)
+    end
+
+    if message_id == hash("play_anim") then
+        animate(self, message.id, message.tb, message.callback)
+    end
 end
 
 function update(self, dt)
-    if self.scriptLoaded then
+    if self.scriptLoaded and self.mode == "ingame" then
         if upd then
             upd(dt)
         end
     end
     function setVar(var, value)
-        self[var] = value
+        self.vars[var] = value
     end
     function getVar(var)
-        local you = self
-        return you[var]
+        return self.vars[var]
     end
-
-
 
 
 
     if not self.doneOnce then
         self.doneOnce = true
-
-        enableSprite(128)
-        msg.post("#128", "disable")
     end
-
-    --[[if self.input["action_id"] then
-        if self.input or globals.tablelen(self.input, false) ~= 0 then
-            self.prevIn = self.input
-            input(self.input["action_id"], self.input["action"])
-
-            self.input = {}
-        end
-    end]]
 end
 
 function on_input(self, action_id, action)
@@ -780,12 +796,5 @@ function on_input(self, action_id, action)
         else
             input(nil, action)
         end
-            --[[if action_id == nil then
-            self.input["action_id"] = action_id
-            self.input["action"] = action
-        else
-           self.input["action_id"] = globals.hash_to_string(action_id)
-           self.input["action"] = action
-        end]]
     end
 end

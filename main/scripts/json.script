@@ -8,7 +8,6 @@ local globals = require("lua_modules.globals")
 
 local function loadJson(self, mapName, jsonData, fromDir, callback)
 	local jtable = json.decode(jsonData)
-	pprint(jtable.mods)
 	local data = jtable[mapName].data
 	msg.post("/objManager#script", "tabledatalen", {len = #data, fromDir = fromDir, collection = select(2, getCamId())})
 	callback(jtable)
@@ -128,13 +127,11 @@ function on_message(self, message_id, message, sender)
 	end
 
 	if message_id == hash("getserver") then
-		pprint("json", self.jsonTable)
 		msg.post(sender, "daserver", {server = self.jsonTable.modservers[message.mod]})
 	end
 end
 
 function on_input(self, action_id, action)
-
 
 end
 

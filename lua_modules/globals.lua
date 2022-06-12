@@ -218,7 +218,7 @@ function globals.getEncrypted(mod, fromHTTP, server, callback)
 				ddMods[mod] = decTb
 			else
 				callback(id, response, decTb)
-				print("Couldn't get encr file of '" .. mod .. "' mod.")
+				print("Couldn't get encr file of '" .. mod .. "' mod. Error Code: " .. response.status)
 			end
 		end)
 	else
