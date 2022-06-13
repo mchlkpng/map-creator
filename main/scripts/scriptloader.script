@@ -17,9 +17,9 @@ local alloc
 
 --[[
 Todo:
-remove all of the unnecessary sprites
 make sure that the modded object scripts can access their object's id
 get rid of that annoying line that is appearing for some reason
+let the getVar/setVar work in initialize() function
 
 ]]
 
@@ -624,6 +624,11 @@ function init(self)
             go.set("#sprite", "tint", vmath.vector4(value.x, value.y, value.z, value.w))
         end
     end
+
+
+    function setVar(var, value)
+        self.vars[var] = value
+    end
 end
 
 --local file = io.open(directory .. )
@@ -636,7 +641,7 @@ function on_message(self, message_id, message, sender)
         self.extraData = message.extradata
         self.typedata = message.typedata
 
-        msg.post("#", "scriptinfo", {id = message.id, type = self.typedata.modtype, modname = self.typedata.mod, mapname = message.mapname, scriptname = self.typedata.script})
+
         self.events = message.events
         self.eventListeners = message.eventListeners
 
@@ -646,7 +651,11 @@ function on_message(self, message_id, message, sender)
             go.set(".", "scale", self.extraData.size)
         end
         go.set(".", "euler", self.extraData.rotation)
-        go.set(self.curSprite, "tint", self.extraData.color)
+        go.set("#sprite", "tint", self.extraData.color)
+
+        timer.delay(0.2, false, function()
+            msg.post("#", "scriptinfo", {id = message.id, type = self.typedata.modtype, modname = self.typedata.mod, mapname = message.mapname, scriptname = self.typedata.script})
+        end)
     end
     
     if message_id == hash("scriptinfo") then
@@ -680,8 +689,7 @@ function on_message(self, message_id, message, sender)
                     self.defaultTex = self.resources.defaultTex
                     setSprite(self.resources.defaultSprite)
                 end
-                initialize()
-                self.scriptLoaded = true
+                timer.delay(0.5, false, function() self.scriptLoaded = true; initialize() end)
             end)
             if sussyB then
                 print("hehe sussyB")
@@ -703,8 +711,7 @@ function on_message(self, message_id, message, sender)
                             self.defaultTex = self.resources.defaultTex
                             setSprite(self.resources.defaultSprite)
                         end
-                        initialize()
-                        self.scriptLoaded = true
+                        timer.delay(0.5, false, function() self.scriptLoaded = true; initialize() end)
                     end
                 end
             end
@@ -736,8 +743,6 @@ function on_message(self, message_id, message, sender)
         end
 
         if self.currentTex ~= sheet then
-            print("ee")
-            pprint(sheet)
             setTexture(sheet)
         end
 
