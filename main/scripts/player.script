@@ -17,13 +17,9 @@ function init(self)
 	self.allLoaded = false
 	self.grav = 0
 	self.coldown = false
-	self.collisionMasks = {"platform"}
-	self.collisionGroups = {"player"}
 	self.dir = vmath.vector3()
 	msg.post(".", "acquire_input_focus")
 	self.to = vmath.vector3()
-
---	globals.setCollision(msg.url(), self.collision, self.collisionGroups, self.collisionMasks)
 end
 
 function final(self)
@@ -43,7 +39,7 @@ function update(self, dt)
 	local change = p + self.dir * speed * dt
 	go.set_position(change)
 
-	self.dir = vmath.vector3()
+	self.dir.x = 0; self.dir.y = 0; self.dir.z = 0
 
 	local from = go.get_position()
 	local to = vmath.vector3(from.x, from.y - 1000, from.z)

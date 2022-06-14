@@ -33,7 +33,6 @@ end
 
 function on_message(self, message_id, message, sender)
 	if message_id == hash("addobject") then
-		pprint(message)
 		self.objs[message.key] = {obj = message.val, data = message.objdata}
 		self.numObjects = self.numObjects + 1
 		print(self.numObjects.. " out of " .. self.objsNeeded .. " objects loaded")

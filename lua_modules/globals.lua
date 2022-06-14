@@ -65,7 +65,6 @@ end
 function globals.hash_to_string(h)
 	local str = string.gsub(tostring(h), "hash: %[", "")
 	str = string.gsub(str, "%]", "")
-	print(str)
 	return str
 end
 
@@ -197,6 +196,7 @@ end
 local ddMods = {}
 function globals.getEncrypted(mod, fromHTTP, server, callback)
 	if ddMods[mod] then
+		print("its already there")
 		callback("sus", {status = 200, response = "urmom"}, ddMods[mod])
 		return ddMods[mod]
 	end
@@ -214,8 +214,8 @@ function globals.getEncrypted(mod, fromHTTP, server, callback)
 					end
 				end
 
-				callback(id, response, decTb)
 				ddMods[mod] = decTb
+				callback(id, response, decTb)
 			else
 				callback(id, response, decTb)
 				print("Couldn't get encr file of '" .. mod .. "' mod. Error Code: " .. response.status)

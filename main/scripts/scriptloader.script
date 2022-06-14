@@ -15,14 +15,15 @@ local ttByName = {}
 local loadedFiles = {}
 local alloc
 local vars = {}
+local objs = {}
 
 --[[
 Todo:
-make sure that the modded object scripts can access their object's id
 get rid of that annoying line that is appearing for some reason
-let the getVar/setVar work in initialize() function
 add possibility to access modobject vars like id, typedata, etc (AND FOR NON MODDED OBJECTS TOO WHEN I WORK ON THAT)
-
+Change object movement so that it is by frame
+Optimize game
+include fact vars are accessable thru var object
 ]]
 
 
@@ -46,7 +47,6 @@ end
 
 function defineVars(self)
     self.position = {x = 0, y = 0, z = 0}
-    self.prevIn = {}
     self.textures = {}
     self.modserver = globals.hostname(true)
     self.collisions = {}
@@ -86,10 +86,10 @@ end
 
 
 function setVar(id, var, value)
-    vars["_"..id][var] = value
+    vars[id][var] = value
 end
 function getVar(id, var)
-    return vars["_"..id][var]
+    return vars[id][var]
 end
 
 -- gets mod .encr file from requested server. If the encr file is already loaded in game, it just uses that instead of wasting time decrypting.
@@ -672,7 +672,7 @@ function on_message(self, message_id, message, sender)
         mapname = message.mapname
         self.modname = message.modname
         msg.post("/jsonloader#json", "getserver", {mod = self.modname})
-        vars["_"..tostring(self.id)] = {}
+        vars[self.id] = {}
 
         loadScript(self, message.scriptname, function(f)
             f()
@@ -801,7 +801,14 @@ function update(self, dt)
         if upd then
             upd(self.id, dt)
         end
+    end
+end
 
+function fixed_update(self, dt)
+    if self.scriptLoaded and self.mode == "ingame" then
+        if fixed_upd then
+            fixed_upd(self.id, dt)
+        end
     end
 end
 

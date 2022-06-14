@@ -5,7 +5,6 @@ local rendercam = require("rendercam.rendercam")
 local defsave = require("defsave.defsave")
 local globals = require("lua_modules.globals")
 
-
 local function loadJson(self, mapName, jsonData, fromDir, callback)
 	local jtable = json.decode(jsonData)
 	local data = jtable[mapName].data
@@ -31,7 +30,14 @@ local function loadLevel(self, lvl, fromDir, callback)
 			else
 				serv = jtable.modservers[v]
 			end
-			globals.getEncrypted(v, not fromDir, serv, function()print("Mod '" .. v .. "' downloaded.") end)
+			local function cb(id, res, tb)
+				if res.status == 200 or res.status == 204 then
+					print("Mod '" .. v .. "downloaded.")
+				else
+					print("Couldn't download mod '" .. v ..".")
+				end
+			end
+			globals.getEncrypted(v, not fromDir, serv, cb)
 		end
 	end
 --	pprint(jtable)

@@ -1,12 +1,10 @@
 {
     "filename": "amogus.json",
     "mods": [
-        "oldMod",
-        "newMod"
+        "oldMod"
     ],
     "modservers": {
-        "oldMod": "mainserver",
-        "newMod": "mainserver"
+        "oldMod": "mainserver"
     },
     "amogus": {
         "name": "amogus",

@@ -20,6 +20,7 @@ width = 1920
 height = 1080
 fullscreen = 0
 vsync = 0
+high_dpi = 0
 
 [script]
 shared_state = 1
