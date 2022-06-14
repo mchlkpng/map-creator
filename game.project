@@ -38,7 +38,6 @@ package = com.mchlkpng.mpcreator
 [physics]
 gravity_y = -1000.0
 scale = 0.01
-debug = 1
 
 [ios]
 bundle_identifier = mchlkpng.mpcreator

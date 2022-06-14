@@ -33,12 +33,20 @@ end
 
 function on_message(self, message_id, message, sender)
 	if message_id == hash("addobject") then
-		table.insert(self.objs, message.key, message.val)
+		pprint(message)
+		self.objs[message.key] = {obj = message.val, data = message.objdata}
 		self.numObjects = self.numObjects + 1
 		print(self.numObjects.. " out of " .. self.objsNeeded .. " objects loaded")
-		if self.numObjects == self.objsNeeded and self.collection == "ingame" then
-			print("yay")
+		if self.numObjects == self.objsNeeded then
+			print("All objects loaded")
+			pprint(self.objs)
+			for i, v in ipairs(self.objs) do
+				msg.post(v.obj, "data", v.data)
+			end
+
+			if self.collection == "ingame" then
 			msg.post("/player#player", "allLoaded")
+			end
 		end
 	end
 	if message_id == hash("tabledatalen") then

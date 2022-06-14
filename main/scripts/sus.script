@@ -42,8 +42,6 @@ function init(self)
 		end
 	end)
 
-	
-
 
 	if sysinfo.system_name ~= "HTML5" or "Android" or "iPhone OS" then
 		--defos.set_fullscreen(true)
@@ -62,7 +60,6 @@ function final(self)
 end
 
 function update(self, dt)
-
 
 	if not self.doneOnce then
 		self.doneOnce = true

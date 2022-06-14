@@ -14,12 +14,14 @@ local takenTextures = {}
 local ttByName = {}
 local loadedFiles = {}
 local alloc
+local vars = {}
 
 --[[
 Todo:
 make sure that the modded object scripts can access their object's id
 get rid of that annoying line that is appearing for some reason
 let the getVar/setVar work in initialize() function
+add possibility to access modobject vars like id, typedata, etc (AND FOR NON MODDED OBJECTS TOO WHEN I WORK ON THAT)
 
 ]]
 
@@ -51,10 +53,10 @@ function defineVars(self)
     self.resources = {}
     self.animations = {}
     self.colboxes = {}
+    self.colboxinfo = {}
     self.scriptLoaded = false
     self.animTimer = nil
     self.currentTex = nil
-    self.vars = {}
 end
 
 function enableSprite(res)
@@ -76,6 +78,18 @@ function stop_animation(self)
     else
         return false
     end
+end
+
+function objProp(prop, id)
+    --make it so that all objects store their mapobj properties in an obj table and make it obtainable
+end
+
+
+function setVar(id, var, value)
+    vars["_"..id][var] = value
+end
+function getVar(id, var)
+    return vars["_"..id][var]
 end
 
 -- gets mod .encr file from requested server. If the encr file is already loaded in game, it just uses that instead of wasting time decrypting.
@@ -624,14 +638,8 @@ function init(self)
             go.set("#sprite", "tint", vmath.vector4(value.x, value.y, value.z, value.w))
         end
     end
-
-
-    function setVar(var, value)
-        self.vars[var] = value
-    end
 end
 
---local file = io.open(directory .. )
 
 function on_message(self, message_id, message, sender)
     --gets info for script
@@ -659,11 +667,12 @@ function on_message(self, message_id, message, sender)
     end
     
     if message_id == hash("scriptinfo") then
-        self.id = message.id; self.vars["id"] = self.id
+        self.id = message.id
         self.type = message.type
         mapname = message.mapname
         self.modname = message.modname
         msg.post("/jsonloader#json", "getserver", {mod = self.modname})
+        vars["_"..tostring(self.id)] = {}
 
         loadScript(self, message.scriptname, function(f)
             f()
@@ -679,7 +688,7 @@ function on_message(self, message_id, message, sender)
                 self.animations = self.resources.animations
 
                 local eee = getIKey(self.collisions, self.resources.defaultSprite)
-                globals.setCollision(self, eee)
+                self.colboxes, self.colboxinfo = globals.setCollision(self, eee)
 
 
                 if self.animations.defaultAnim then
@@ -689,7 +698,10 @@ function on_message(self, message_id, message, sender)
                     self.defaultTex = self.resources.defaultTex
                     setSprite(self.resources.defaultSprite)
                 end
-                timer.delay(0.5, false, function() self.scriptLoaded = true; initialize() end)
+                if self.mode == "ingame" then
+                    self.scriptLoaded = true
+                    initialize(self.id)
+                end
             end)
             if sussyB then
                 print("hehe sussyB")
@@ -702,7 +714,7 @@ function on_message(self, message_id, message, sender)
                     if globals.tablelen(self.textures, false) ~= 0 then
                         self.animations = self.resources.animations
                         local eee = getIKey(self.collisions, self.resources.defaultSprite)
-                        globals.setCollision(self, eee)
+                        self.colboxes, self.colboxinfo = globals.setCollision(self, eee)
                         
                         if self.animations.defaultAnim then
                             self.defaultAnim = self.animations.defaultAnim
@@ -711,7 +723,11 @@ function on_message(self, message_id, message, sender)
                             self.defaultTex = self.resources.defaultTex
                             setSprite(self.resources.defaultSprite)
                         end
-                        timer.delay(0.5, false, function() self.scriptLoaded = true; initialize() end)
+
+                        if self.mode == "ingame" then
+                        self.scriptLoaded = true
+                        initialize(self.id)
+                        end
                     end
                 end
             end
@@ -775,31 +791,26 @@ function on_message(self, message_id, message, sender)
 end
 
 function update(self, dt)
-    if self.scriptLoaded and self.mode == "ingame" then
-        if upd then
-            upd(dt)
-        end
-    end
-    function setVar(var, value)
-        self.vars[var] = value
-    end
-    function getVar(var)
-        return self.vars[var]
-    end
-
-
 
     if not self.doneOnce then
         self.doneOnce = true
+    end
+
+
+    if self.scriptLoaded and self.mode == "ingame" then
+        if upd then
+            upd(self.id, dt)
+        end
+
     end
 end
 
 function on_input(self, action_id, action)
     if self.scriptLoaded and self.mode == "ingame" then
         if action_id then
-            input(globals.hash_to_string(action_id), action)
+            input(self.id, globals.hash_to_string(action_id), action)
         else
-            input(nil, action)
+            input(self.id, nil, action)
         end
     end
 end

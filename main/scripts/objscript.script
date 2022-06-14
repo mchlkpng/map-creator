@@ -39,11 +39,10 @@ local function createObject(self, id, pos, rot, color, size, optional_typedata, 
 		obj = factory.create("#factory", position, nil, {}, vmath.vector3(1, 1, 1))
 	end
 	
-	timer.delay(0.1, false, function()
-		msg.post(obj, "data", {mode = mode, id = id, extradata = {size = siz, rotation = rotation, color = colr}, typedata = typedata, events = events, eventListeners = eventListeners, mapname = mapname})
-	end)
 
-	return obj
+	local data = {mode = mode, id = id, extradata = {size = siz, rotation = rotation, color = colr}, typedata = typedata, events = events, eventListeners = eventListeners, mapname = mapname}
+
+	return obj, data
 end
 
 function init(self)
@@ -85,9 +84,10 @@ function on_message(self, message_id, message, sender)
 		local v = message.val
 		local mapname = message.mapname or message.lvl
 		v.key = key
-		table.insert(self.objs, key, 
-		createObject(self, v.key, v.pos, v.rotation, v.color, v.size, v.typedata, v.events, v.eventListeners, self.mode, mapname))
-		msg.post("/objManager#script", "addobject", {key = key, val = self.objs[key]})
+
+		local object, objdata = createObject(self, v.key, v.pos, v.rotation, v.color, v.size, v.typedata, v.events, v.eventListeners, self.mode, mapname)
+		table.insert(self.objs, key, object)
+		msg.post("/objManager#script", "addobject", {key = key, val = self.objs[key], objdata = objdata})
 	end
 end
 
