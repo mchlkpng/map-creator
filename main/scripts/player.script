@@ -8,6 +8,7 @@ local function fpsUpdate(self, fps)
 	--
 end
 
+
 function draw_line(from, to)
 	msg.post("@render:", "draw_line", { start_point = from, end_point = to, color = vmath.vector4(1,0,0,1) })
 end
@@ -61,7 +62,7 @@ function update(self, dt)
 	if not self.coldown and self.allLoaded then
 		local pos = go.get_position()
 		go.set_position(vmath.vector3(pos.x, pos.y + (self.grav*dt), pos.z))
-		self.grav =  self.grav - 20
+		self.grav =  self.grav - 2500 * dt
 	end
 end
 
@@ -77,9 +78,6 @@ function on_input(self, action_id, action)
 		self.grav = 1000
 		local pos = go.get_position()
 		go.set_position(vmath.vector3(pos.x, pos.y + 19, pos.z))
-	end
-	if action_id == hash("key_down") then
-		self.dir.y = -1
 	end
 	if action_id == hash("key_left") then
 		self.dir.x = -1

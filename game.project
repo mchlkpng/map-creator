@@ -49,3 +49,6 @@ http_timeout = 30.0
 [render]
 clear_color_green = 0.0
 
+[resource]
+http_cache = 0
+
