@@ -30,11 +30,12 @@ app_icon = /assets/app_icons/appicon.ico
 
 [osx]
 app_icon = /assets/app_icons/appicon.icns
+bundle_identifier = mchlkpng.mapcreator
 
 [android]
 input_method = HiddenInputField
 debuggable = 1
-package = com.mchlkpng.mpcreator
+package = mchlkpng.mpcreator
 
 [physics]
 gravity_y = -1000.0
@@ -51,4 +52,7 @@ clear_color_green = 0.0
 
 [resource]
 http_cache = 0
+
+[html5]
+show_made_with_defold = 0
 
