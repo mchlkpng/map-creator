@@ -63,7 +63,9 @@ function on_message(self, message_id, message, sender)
 		local collection = tostring(sender)
 		collection = string.gsub(collection, "url: %[main:/go#proxy_", "")
 		collection = string.gsub(collection, "%]", "")
-		msg.post(collection .. ":/jsonloader#json", "loadJson", {lvl = "mapEx"})
+		if collection ~= "multiplayer" then
+			msg.post(collection .. ":/jsonloader#json", "loadJson", {lvl = "mapEx"})
+		end
 		go.set(".", "position.z", -10001)
 		self.colLoaded = collection
 	end

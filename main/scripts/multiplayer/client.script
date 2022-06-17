@@ -6,19 +6,24 @@ local globals = require("lua_modules.globals")
 local json = require("lua_modules.json")
 
 function init(self)
+	local hi = "hi"
+	print(string.find("hello\nguys", "\n"))
 	local hn = globals.hostname(true):gsub("http", "")
 	client = ColyseusClient.new("ws"..hn)
 	local mapname = "amogus"
-	local mjson = resource.load("/res/json files/"..mapname..".json")
-	client.join_or_create("inGame", {loadMap = false, mapName = mapname, mapJson = mjson}, function(err, _room)
+	local mjson = sys.load_resource("/res/json files/"..mapname..".json")
+	local tb = {loadMap = false, mapName = mapname, mapJson = mjson}
+	client:join_or_create("inGame", tb, function(err, _room)
 		if err then
 			print("JOIN ERROR: " .. err)
 			return
 		end
 
 		room = _room
+
 	end)
 end
+
 
 function final(self)
 	-- Add finalization code here
@@ -27,9 +32,26 @@ function final(self)
 end
 
 function update(self, dt)
-	-- Add update code here
-	-- Learn more: https://defold.com/manuals/script/
-	-- Remove this function if not needed
+	if room then
+		if self.prevState ~= room.state then
+			
+		end
+
+		room:on_message("map", function(message)
+			pprint("got map")
+			local sending = json.encode(message.map)
+			local sen = ""
+			
+			for i = 1, string.len(sending) do
+				sen = sen .. string.sub(sending, i, i)
+				if i % 25 == 0 or i == string.len(sending) then
+					msg.post("/jsonloader#mJson", "mappart", {part = sen})
+					sen = ""
+				end
+			end
+			msg.post("/jsonloader#mJson", "done", {mapname = message.mapname})
+		end)
+	end
 end
 
 function fixed_update(self, dt)

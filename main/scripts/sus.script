@@ -33,7 +33,6 @@ function init(self)
 					if status == 200 or 301 and response.response == "All good!" then
 						globals.setHost("http://" .. v.address)
 						print("server up at " .. self.host .. ":2567")
-						break
 					else
 						print("server not running on " .. v.address)
 					end
