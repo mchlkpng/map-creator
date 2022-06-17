@@ -6,6 +6,8 @@ dependencies#1 = https://github.com/subsoap/defos/archive/master.zip
 dependencies#2 = https://github.com/subsoap/defsave/archive/master.zip
 dependencies#3 = https://github.com/britzl/defold-lfs/archive/master.zip
 dependencies#4 = https://github.com/britzl/defold-metrics/archive/master.zip
+dependencies#5 = https://github.com/colyseus/colyseus-defold/archive/0.14.zip
+dependencies#6 = https://github.com/defold/extension-websocket/archive/refs/tags/3.0.0.zip
 
 [bootstrap]
 main_collection = /main/collections/sus.collectionc
