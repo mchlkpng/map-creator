@@ -21,8 +21,6 @@ function init(self)
 
 		room = _room
 
-		room:send("tb", {state = room.state})
-
 	end)
 end
 
@@ -36,7 +34,7 @@ end
 function update(self, dt)
 	if room then
 		if self.prevState ~= room.state then
-			
+			pprint(room.state)
 		end
 
 		room:on_message("map", function(message)
