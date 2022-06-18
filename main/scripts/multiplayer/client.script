@@ -15,11 +15,13 @@ function init(self)
 	local tb = {loadMap = false, mapName = mapname, mapJson = mjson}
 	client:join_or_create("inGame", tb, function(err, _room)
 		if err then
-			print("JOIN ERROR: " .. err)
+			pprint("JOIN ERROR: ", err)
 			return
 		end
 
 		room = _room
+
+		room:send("tb", {state = room.state})
 
 	end)
 end
