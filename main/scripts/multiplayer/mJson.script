@@ -118,6 +118,7 @@ function on_message(self, message_id, message, sender)
 
 	if message_id == hash("done") then
 		print("done")
+		print(self.json)
 		loadJson(self, message.mapname, self.json, false, function(jtable)
 			self.jsonTable = jtable
 		end)

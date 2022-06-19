@@ -5,15 +5,18 @@ local room
 local globals = require("lua_modules.globals")
 local json = require("lua_modules.json")
 
-function init(self)
-	local hi = "hi"
-	print(string.find("hello\nguys", "\n"))
+local function joinServer(domain, options)
+	if not options.mapName or options.loadMap then
+		error("incomplete options table")
+	end
+	if options.loadMap == false and not options.mapJson then
+		error("needs to be mapJson if not loading map")
+	end
+
 	local hn = globals.hostname(true):gsub("http", "")
 	client = ColyseusClient.new("ws"..hn)
-	local mapname = "amogus"
-	local mjson = sys.load_resource("/res/json files/"..mapname..".json")
-	local tb = {loadMap = false, mapName = mapname, mapJson = mjson}
-	client:join_or_create("inGame", tb, function(err, _room)
+	
+	client:join_or_create("inGame", options, function(err, _room)
 		if err then
 			pprint("JOIN ERROR: ", err)
 			return
@@ -22,6 +25,19 @@ function init(self)
 		room = _room
 
 	end)
+end
+
+local function leaveServer(consented)
+	if room then
+		room:leave(consented or true)
+		room = nil
+	else
+		print("not connected to room")
+	end
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
 end
 
 
@@ -35,6 +51,13 @@ function update(self, dt)
 	if room then
 		if self.prevState ~= room.state then
 			self.prevState = room.state
+			print("state changed")
+
+			room:on("leave", function()
+				room = nil
+				self.started = false
+				msg.post("main:/go#main", "unload_proxy", {collection = "multiplayer"})
+			end)
 		end
 
 		room:on_message("map", function(message)
@@ -67,15 +90,21 @@ function on_message(self, message_id, message, sender)
 end
 
 function on_input(self, action_id, action)
-	-- Add input-handling code here. The game object this script is attached to
-	-- must have acquired input focus:
-	--
-	--    msg.post(".", "acquire_input_focus")
-	--
-	-- All mapped input bindings will be received. Mouse and touch input will
-	-- be received regardless of where on the screen it happened.
-	-- Learn more: https://defold.com/manuals/input/
-	-- Remove this function if not needed
+	if room then
+		if action_id == hash("key_g") and action.pressed and not self.started then
+			room:send("start")
+			self.started = true
+		end
+
+		if action_id == hash("key_w") and action.pressed then
+			leaveServer()
+		end
+	end
+
+	if action_id == hash("key_q") and action.pressed and not room then
+		local mapname = "amogus"
+		joinServer(globals.hostname(true), {loadMap = false, mapName = mapname, mapJson = sys.load_resource("/res/json files/"..mapname..".json")})
+	end
 end
 
 function on_reload(self)
