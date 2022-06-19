@@ -34,7 +34,7 @@ end
 function update(self, dt)
 	if room then
 		if self.prevState ~= room.state then
-			
+			self.prevState = room.state
 		end
 
 		room:on_message("map", function(message)
