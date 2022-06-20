@@ -2,6 +2,12 @@ local globals = require "lua_modules.globals"
 local rendercam = require "rendercam.rendercam"
 go.property("collision", vmath.vector4(-50, 50, -137, 137))
 local fps = require "metrics.fps"
+local keybinds = {
+	left = hash("key_left"),
+	right = hash("key_right"),
+	jump = hash("key_up"),
+	fall = hash("key_down")
+}
 
 
 local function fpsUpdate(self, fps)
@@ -69,21 +75,23 @@ end
 function on_message(self, message_id, message, sender)
 	if message_id == hash("allLoaded") then
 		print("what the heay")
-		self.allLoaded = true
+		timer.delay(1, false, function()
+			self.allLoaded = true
+		end)
 	end
 end
 
 function on_input(self, action_id, action)
-	if action_id == hash("key_up") and self.coldown then
+	if action_id == keybinds.jump and self.coldown then
 		self.grav = 1000
 		local pos = go.get_position()
 		pos.y = pos.y + 19
 		go.set_position(pos)
 	end
-	if action_id == hash("key_left") then
+	if action_id == keybinds.left then
 		self.dir.x = -1
 	end
-	if action_id == hash("key_right") then
+	if action_id == keybinds.right then
 		self.dir.x = 1
 	end
 	if not action_id then

@@ -22,7 +22,7 @@ use_accelerometer = 0
 width = 1920
 height = 1080
 fullscreen = 0
-vsync = 0
+vsync = 1
 high_dpi = 0
 
 [script]
@@ -43,6 +43,7 @@ package = mchlkpng.mpcreator
 [physics]
 gravity_y = -1000.0
 scale = 0.01
+debug = 0
 
 [ios]
 bundle_identifier = mchlkpng.mpcreator
@@ -58,4 +59,7 @@ http_cache = 0
 
 [html5]
 show_made_with_defold = 0
+
+[collection]
+max_instances = 10000
 

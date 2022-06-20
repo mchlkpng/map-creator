@@ -39,6 +39,7 @@ end
 function init(self)
 	msg.post(".", "acquire_input_focus")
 	self.objs = {}
+	self.statechange = {}
 end
 
 
@@ -59,6 +60,16 @@ function update(self, dt)
 				self.started = false
 				msg.post("main:/go#main", "unload_proxy", {collection = "multiplayer"})
 			end)
+		end
+		if #self.statechange ~= 0 then
+			--for i, v in ipairs(self.statechange) do
+				--print("budugnus")
+				--room:send("modstatechange", {allstate = self.statechange})
+				--room:send("odungus", self.statechange)
+				--self.statechange = {}
+				--self.statechange[i] = nil
+				--break;
+			--end
 		end
 
 		room:on_message("map", function(message)
@@ -95,9 +106,10 @@ function fixed_update(self, dt)
 end
 
 function on_message(self, message_id, message, sender)
-	-- Add message-handling code here
-	-- Learn more: https://defold.com/manuals/message-passing/
-	-- Remove this function if not needed
+	if message_id == hash("modstatechange") then
+		table.insert(self.statechange, message)
+		room:send("mschange", message)
+	end
 end
 
 function on_input(self, action_id, action)

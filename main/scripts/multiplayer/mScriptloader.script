@@ -834,19 +834,19 @@ function on_message(self, message_id, message, sender)
         local statechanged = false
 
         if pos ~= tableToVec(self.state.pos, 3) then
-            self.state.pos = pos
+            self.state.pos = vecToTable(pos, 3)
             statechanged = true
         end
         if rot ~= tableToVec(self.state.rotation, 3) then
-            self.state.rotation = rot
+            self.state.rotation = vecToTable(rot, 3)
             statechanged = true
         end
         if size ~= tableToVec(self.state.size, 3) then
-            self.state.size = size
+            self.state.size = vecToTable(size, 3)
             statechanged = true
         end
         if color ~= tableToVec(self.state.color, 4) then
-            self.state.color = color
+            self.state.color = vecToTable(color, 4)
             statechanged = true
         end
         if self.currentAnim ~= self.state.anim then
@@ -859,13 +859,12 @@ function on_message(self, message_id, message, sender)
         end
 
         if statechanged then
-            print("my state changed")
+            msg.post("/client#client", "modstatechange", {id = self.id, state = self.state})
         end
     end
 end
 
 function update(self, dt)
-    msg.post("#", "checkstatechange")
     
 
     if not self.doneOnce then
@@ -876,6 +875,7 @@ function update(self, dt)
     if self.scriptLoaded and self.mode == "multiplayer" then
         if upd and self.controlled then
             upd(self.id, dt)
+            msg.post("#", "checkstatechange")
         end
     end
 
