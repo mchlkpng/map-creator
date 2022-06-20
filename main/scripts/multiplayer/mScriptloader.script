@@ -26,6 +26,26 @@ Optimize game
 include fact vars are accessable thru var table
 ]]
 
+function vecToTable(vector, v3or4)
+    if v3or4 == 3 then
+        return {x = vector.x, y = vector.y, z = vector.z}
+    elseif v3or4 == 4 then
+        return {x = vector.x, y = vector.y, z = vector.z, w = vector.w}
+    end
+end
+
+function tableToVec(table, v3or4)
+    local e
+    if v3or4 == 4 then
+        e = vmath.vector4()
+        e.w = table.w
+    elseif v3or4 == 3 then
+        e = vmath.vector3()
+    end
+    e.x = table.x; e.y = table.y; e.z = table.z
+    return e
+end
+
 function gvars()
     return vars
 end
@@ -59,6 +79,7 @@ function defineVars(self)
     self.animations = {}
     self.colboxes = {}
     self.colboxinfo = {}
+    self.state = {pos = {x=0,y=0,z=0}, rotation = {x=0,y=0,z=0}, size = {x=1,y=1,z=1}, color = {x=1,y=1,z=1,w=1}, anim = "", sprite = ""}
     self.scriptLoaded = false
     self.animTimer = nil
     self.currentTex = nil
@@ -75,13 +96,18 @@ function enableSprite(res)
     end
 end
 
-function stop_animation(self)
+function stop_animation(self, setTo)
     if self.animTimer then
         timer.cancel(self.animTimer)
         self.animTimer = nil
+        self.currentAnim = ""
         return true
     else
         return false
+    end
+
+    if setTo then
+        setSprite(setTo)
     end
 end
 
@@ -490,7 +516,8 @@ function animate(self, id, tb, callback)
     if not self.animations[id] then
         error("Animation ID '" .. id .. "' is not in 'animations' table!")
     end
-    
+
+    self.currentAnim = id
     local frames = self.animations[id].frames
     if playback:find("ONCE") then
         if playback:find("FORWARD") then
@@ -616,7 +643,7 @@ end
 function init(self)
     defineVars(self)
 
-
+--CHANGE STATE CHANGE DETECTION, LAGS GAME DRASTICALLY
     
     self.id = nil
     self.type = nil
@@ -656,6 +683,7 @@ function on_message(self, message_id, message, sender)
         self.mode = message.mode
         self.extraData = message.extradata
         self.typedata = message.typedata
+        self.controlled = message.controlled
 
 
         self.events = message.events
@@ -679,7 +707,7 @@ function on_message(self, message_id, message, sender)
         self.type = message.type
         mapname = message.mapname
         self.modname = message.modname
-        msg.post("/jsonloader#json", "getserver", {mod = self.modname})
+        msg.post("/jsonloader#mJson", "getserver", {mod = self.modname})
         vars[self.id] = {}
 
         loadScript(self, message.scriptname, function(f)
@@ -706,7 +734,8 @@ function on_message(self, message_id, message, sender)
                     self.defaultTex = self.resources.defaultTex
                     setSprite(self.resources.defaultSprite)
                 end
-                if self.mode == "ingame" then
+
+                if self.mode == "multiplayer" and self.controlled then
                     self.scriptLoaded = true
                     initialize(self.id)
                 end
@@ -732,9 +761,9 @@ function on_message(self, message_id, message, sender)
                             setSprite(self.resources.defaultSprite)
                         end
 
-                        if self.mode == "ingame" then
+                        if self.mode == "multiplayer" and self.controlled then
                         self.scriptLoaded = true
-                        initialize(self.id)
+                        if self.controlled then initialize(self.id) end
                         end
                     end
                 end
@@ -796,32 +825,73 @@ function on_message(self, message_id, message, sender)
     if message_id == hash("play_anim") then
         animate(self, message.id, message.tb, message.callback)
     end
+
+    if message_id == hash("checkstatechange") then
+        local pos = go.get_position()
+        local rot = go.get(".", "euler")
+        local size = go.get(".", "scale")
+        local color = go.get("#sprite", "tint")
+        local statechanged = false
+
+        if pos ~= tableToVec(self.state.pos, 3) then
+            self.state.pos = pos
+            statechanged = true
+        end
+        if rot ~= tableToVec(self.state.rotation, 3) then
+            self.state.rotation = rot
+            statechanged = true
+        end
+        if size ~= tableToVec(self.state.size, 3) then
+            self.state.size = size
+            statechanged = true
+        end
+        if color ~= tableToVec(self.state.color, 4) then
+            self.state.color = color
+            statechanged = true
+        end
+        if self.currentAnim ~= self.state.anim then
+            self.state.anim = self.currentAnim
+            statechanged = true
+        end
+        if self.currentSprite ~= self.state.sprite then
+            self.state.sprite = self.currentSprite
+            statechanged = true
+        end
+
+        if statechanged then
+            print("my state changed")
+        end
+    end
 end
 
 function update(self, dt)
+    msg.post("#", "checkstatechange")
+    
 
     if not self.doneOnce then
         self.doneOnce = true
     end
 
 
-    if self.scriptLoaded and self.mode == "ingame" then
-        if upd then
+    if self.scriptLoaded and self.mode == "multiplayer" then
+        if upd and self.controlled then
             upd(self.id, dt)
         end
     end
+
+    
 end
 
 function fixed_update(self, dt)
-    if self.scriptLoaded and self.mode == "ingame" then
-        if fixed_upd then
+    if self.scriptLoaded and self.mode == "multiplayer" then
+        if fixed_upd and self.controlled then
             fixed_upd(self.id, dt)
         end
     end
 end
 
 function on_input(self, action_id, action)
-    if self.scriptLoaded and self.mode == "ingame" then
+    if self.scriptLoaded and self.mode == "multiplayer" then
         if action_id then
             input(self.id, globals.hash_to_string(action_id), action)
         else

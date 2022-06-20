@@ -40,7 +40,7 @@ local function createObject(self, id, pos, rot, color, size, optional_typedata, 
 	end
 	
 
-	local data = {mode = mode, id = id, extradata = {size = siz, rotation = rotation, color = colr}, typedata = typedata, events = events, eventListeners = eventListeners, mapname = mapname}
+	local data = {type = self.type, mode = mode, id = id, extradata = {size = siz, rotation = rotation, color = colr}, typedata = typedata, events = events, eventListeners = eventListeners, mapname = mapname}
 
 	return obj, data
 end
@@ -71,8 +71,8 @@ function on_message(self, message_id, message, sender)
 	if message_id == hash("spawn") then
 		if string.find(message.mode, "mapcreator") then
 			self.mode = "create"
-		elseif string.find(message.mode, "ingame") then
-			self.mode = "ingame"
+		else
+			self.mode = message.mode
 		end
 
 		local key

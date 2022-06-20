@@ -31,7 +31,7 @@ end
 
 function update(self, dt)
 	self.fps.update()
-	label.set_text("/player#label", tostring(math.floor(1/dt)))
+	label.set_text("/player#label", tostring(self.fps.fps()))
 	local speed = 500
 	if vmath.length_sqr(self.dir) > 1 then
 		self.dir = vmath.normalize(self.dir)

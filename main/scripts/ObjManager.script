@@ -1,5 +1,24 @@
 go.property("numObjects", 0)
 go.property("fromDir", true)
+local globals = require("lua_modules.globals")
+
+local function findInTable(table, value, intkeys)
+	if intkeys then
+		for i, v in ipairs(table) do
+			if value == v then
+				return i
+			end
+		end
+		return false
+	else
+		for i, v in pairs(table) do
+			if value == v then
+				return i
+			end
+		end
+		return false
+	end
+end
 
 local function tablelen(T, has_integer_keys)
 	local count = 0
@@ -39,13 +58,15 @@ function on_message(self, message_id, message, sender)
 		if self.numObjects == self.objsNeeded then
 			print("All objects loaded")
 			for i, v in ipairs(self.objs) do
-				msg.post(v.obj, "data", v.data)
+				if self.collection ~= "multiplayer" then
+					msg.post(v.obj, "data", v.data)
+				end
 			end
 
 			if self.collection == "ingame" then
 				msg.post("/player#player", "allLoaded")
 			elseif self.collection == "multiplayer" then
-				msg.post("/player#mPlayer", "allLoaded")
+				--msg.post("/player#mPlayer", "allLoaded")
 			end
 		end
 	end
@@ -54,6 +75,20 @@ function on_message(self, message_id, message, sender)
 		self.objsNeeded = message.len
 		self.fromDir = message.fromDir
 		self.collection = message.collection
+	end
+
+	if message_id == hash("control") then
+		for i, v in ipairs(self.objs) do
+			if findInTable(message.ids, i, true) then
+				print(i)
+				self.objs[i].data.controlled = true
+			elseif v.type == "custom" then
+				self.objs[i].data.controlled = false
+			end
+			msg.post(globals.hash_to_string(v.obj), "data", v.data)
+		end
+
+		msg.post("/player#mPlayer", "allLoaded")
 	end
 end
 

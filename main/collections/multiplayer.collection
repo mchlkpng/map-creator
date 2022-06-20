@@ -73,7 +73,7 @@ embedded_instances {
   "embedded_components {\n"
   "  id: \"factory\"\n"
   "  type: \"factory\"\n"
-  "  data: \"prototype: \\\"/main/GOs/custom.go\\\"\\n"
+  "  data: \"prototype: \\\"/main/GOs/multiplayer/mCustom.go\\\"\\n"
   "load_dynamically: false\\n"
   "\"\n"
   "  position {\n"

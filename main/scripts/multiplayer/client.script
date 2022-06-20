@@ -38,6 +38,7 @@ end
 
 function init(self)
 	msg.post(".", "acquire_input_focus")
+	self.objs = {}
 end
 
 
@@ -61,18 +62,28 @@ function update(self, dt)
 		end
 
 		room:on_message("map", function(message)
-			pprint("got map")
-			local sending = json.encode(message.map)
-			local sen = ""
-			
-			for i = 1, string.len(sending) do
-				sen = sen .. string.sub(sending, i, i)
-				if i % 25 == 0 or i == string.len(sending) then
-					msg.post("/jsonloader#mJson", "mappart", {part = sen})
-					sen = ""
+			if #self.objs == 0 then
+				pprint("got map")
+				local sending = json.encode(message.map)
+				local sen = ""
+				self.map = message.map
+				self.mapname = message.mapname
+				self.objs = message.map[message.mapname].data
+				
+				for i = 1, string.len(sending) do
+					sen = sen .. string.sub(sending, i, i)
+					if i % 25 == 0 or i == string.len(sending) then
+						msg.post("/jsonloader#mJson", "mappart", {part = sen})
+						sen = ""
+					end
 				end
+				msg.post("/jsonloader#mJson", "done", {mapname = message.mapname})
 			end
-			msg.post("/jsonloader#mJson", "done", {mapname = message.mapname})
+		end)
+
+		room:on_message("controlling", function(message)
+			pprint(message.ids)
+			msg.post("/objManager#script", "control", {ids = message.ids})
 		end)
 	end
 end
