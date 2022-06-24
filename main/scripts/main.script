@@ -2,10 +2,14 @@ local rendercam = require("rendercam.rendercam")
 local directory = sys.get_save_file("mpcreator", "directory.dir"):gsub("directory.dir", "")
 local globals = require "lua_modules.globals"
 
+function processString(s)
+	print("thing", string.match(s, "${.+}"))
+end
+
 
 function init(self)
+	processString("hello ${idoat}, how is ${dideh} doing")
 	print(directory)
-	sys.set_vsync_swap_interval(1)
 	--[[sys.save(directory .. "testfile.sum", {hi = "something", score = 4, ssn = 6940})
 	local file = io.open(directory .. "testfile.sum", "rb")
 	local inf = file:read("*a")
@@ -28,6 +32,8 @@ function init(self)
 		f:close()
 	end]]
 
+	local dungus = "${aVar}"
+	
 end
 
 function on_input(self, action_id, action)
