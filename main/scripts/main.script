@@ -1,17 +1,13 @@
 local rendercam = require("rendercam.rendercam")
 local directory = sys.get_save_file("mpcreator", "directory.dir"):gsub("directory.dir", "")
 local globals = require "lua_modules.globals"
-local socket = require "socket.socket"
 
 function processString(s)
 	print("thing", string.find(s, "${.+}"))
 	local found = string.match(s, "${.+}")
 end
 
-
 function init(self)
-	socket.connect4("224.0.0.239", 80, "224.0.0.239", 80)
-	
 	processString("hello ${idoat}, how is ${dideh} doing")
 	print(directory)
 	--[[sys.save(directory .. "testfile.sum", {hi = "something", score = 4, ssn = 6940})

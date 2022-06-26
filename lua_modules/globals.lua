@@ -24,6 +24,19 @@ function globals.on_mobile()
 	return globals.ON_MOBILE
 end
 
+
+
+function globals.clearVector(v)
+	local hasZ = false
+	local hasW = false
+	v.x = 0
+	v.y = 0
+	local worked = pcall(function() local a = v.z end)
+	if worked then v.z = 0 end
+	worked = pcall(function() local a = v.w end)
+	if worked then v.w = 0 end
+end
+
 function globals.encrypt(str, sn)
 	local laconta = 0
 	math.randomseed(sn)

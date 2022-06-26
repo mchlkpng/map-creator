@@ -39,7 +39,6 @@ function update(self, dt)
 	self.fps.update()
 	label.set_text("/player#label", tostring(math.floor(1/dt)))
 	local speed = 500
-	print(vmath.length_sqr(self.dir))
 	if vmath.length_sqr(self.dir) > 1 then
 		self.dir = vmath.normalize(self.dir)
 	end
@@ -85,6 +84,7 @@ end
 function on_input(self, action_id, action)
 	if action_id == keybinds.jump and self.coldown then
 		self.grav = 1000
+		self.dir.y = 1
 		local pos = go.get_position()
 		pos.y = pos.y + 19
 		go.set_position(pos)

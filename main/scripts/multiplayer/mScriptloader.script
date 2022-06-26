@@ -26,6 +26,17 @@ Optimize game
 include fact vars are accessable thru var table
 ]]
 
+function vmath.clear(v)
+    local hasZ = false
+    local hasW = false
+    v.x = 0
+    v.y = 0
+    local worked = pcall(function() local a = v.z end)
+    if worked then v.z = 0 end
+    worked = pcall(function() local a = v.w end)
+    if worked then v.w = 0 end
+end
+
 function vecToTable(vector, v3or4)
     if v3or4 == 3 then
         return {x = vector.x, y = vector.y, z = vector.z}
