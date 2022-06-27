@@ -78,8 +78,8 @@ function on_message(self, message_id, message, sender)
 	end
 
 	if message_id == hash("proxy_unloaded") then
-		msg.post(sender, "disable")
 		msg.post(sender, "final")
+		msg.post(sender, "disable")
 		msg.post(sender, "unload")
 		self.colLoaded = false
 	end

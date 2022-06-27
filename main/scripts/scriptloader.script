@@ -829,3 +829,11 @@ function on_input(self, action_id, action)
         end
     end
 end
+
+function final(self)
+    if self.scriptLoaded and self.mode == "ingame" then
+        if finalize then
+            finalize(self.id)
+        end
+    end
+end
