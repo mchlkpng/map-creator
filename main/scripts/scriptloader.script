@@ -473,14 +473,18 @@ end
 function animate(self, id, tb, callback)
     stop_animation(self)
     local framerate, playback
-    if tb[1] == "default" and #tb == 1 then
+    if tb == "default" then
         framerate = self.animations[id].framerate
         playback = self.animations[id].playback
-    elseif tb.framerate and tb.playback then
-        framerate = tb.framerate
-        playback = tb.playback
+    elseif type(tb) == "table" then
+        if tb.framerate and tb.playback then
+            framerate = tb.framerate
+            playback = tb.playback
+        else
+            error("Parameter 'tb' must be a string 'default' or a table that can only take 2 values:\n{framerate = (num), playback = (playback type)}")
+        end
     else
-        error("Parameter 'tb' must be a table and can only take 2 values:\n{'default'} or {framerate = (num), playback = (playback type)}")
+        error("Parameter 'tb' must be a string 'default' or a table that can only take 2 values:\n{framerate = (num), playback = (playback type)}")
     end
     
     if not go[playback] then
@@ -520,11 +524,12 @@ function animate(self, id, tb, callback)
                 end
             end)
         elseif playback:find("PINGPONG") then
-            local frame = 1
+            local frame = 0
             setSprite(frames[1], true)
             self.animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
+                frame = frame + 1
                 if frame > #frames then
-                    if frame > #frames*2 -1 then
+                    if frame > #frames*2 then
                         if callback then callback() end
                         self.animTimer = nil
                         timer.cancel(handle)
@@ -541,7 +546,7 @@ function animate(self, id, tb, callback)
     if playback:find("LOOP") then
         if playback:find("FORWARD") then
             setSprite(frames[1], true)
-            local frame = 1
+            local frame = 0
             self.animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
                 frame = frame + 1
                 if frame > #frames then
@@ -552,7 +557,7 @@ function animate(self, id, tb, callback)
                 setSprite(frames[frame], true)
             end)
         elseif playback:find("BACKWARD") then
-            local frame = #frames
+            local frame = #frames + 1
             setSprite(frames[frame], true)
             self.animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
                 frame = frame - 1
@@ -564,13 +569,14 @@ function animate(self, id, tb, callback)
                 setSprite(frames[frame], true)
             end)
         elseif playback:find("PINGPONG") then
-            local frame = 1
+            local frame = 0
             setSprite(frames[1], true)
             self.animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
+                frame = frame + 1
                 if frame > #frames then
-                    if frame > #frames*2 -1 then
+                    if frame > #frames*2 then
                         if callback then callback() end
-                        frame = 1
+                        frame = 0
                     else
                             setSprite(frames[frame - #frames], true)
                     end
