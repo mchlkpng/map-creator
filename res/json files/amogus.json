@@ -15,7 +15,7 @@
                 "typedata": {
                     "mod": "oldMod",
                     "modtype": "baka",
-                    "script": "script.lua",
+                    "script":"script.lua", "jsScript": "script.js",
                     "modtypedata": {
                     }
                 },
@@ -29,7 +29,7 @@
                 "typedata": {
                     "mod": "oldMod",
                     "modtype": "baka",
-                    "script": "script.lua",
+                    "script":"script.lua", "jsScript": "script.js",
                     "modtypedata": {
                     }
                 },
@@ -43,7 +43,7 @@
                 "typedata": {
                     "mod": "oldMod",
                     "modtype": "baka",
-                    "script": "script.lua",
+                    "script":"script.lua", "jsScript": "script.js",
                     "modtypedata": {
                     }
                 },
@@ -57,7 +57,7 @@
                 "typedata": {
                     "mod": "oldMod",
                     "modtype": "baka",
-                    "script": "script.lua",
+                    "script":"script.lua", "jsScript": "script.js",
                     "modtypedata": {
                     }
                 },
@@ -71,7 +71,7 @@
                 "typedata": {
                     "mod": "oldMod",
                     "modtype": "baka",
-                    "script": "script.lua",
+                    "script":"script.lua", "jsScript": "script.js",
                     "modtypedata": {
                     }
                 },
@@ -85,7 +85,7 @@
                 "typedata": {
                     "mod": "oldMod",
                     "modtype": "baka",
-                    "script": "script.lua",
+                    "script":"script.lua", "jsScript": "script.js",
                     "modtypedata": {
                     }
                 },
