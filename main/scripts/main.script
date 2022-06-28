@@ -9,7 +9,6 @@ end
 
 function init(self)
 	processString("hello ${idoat}, how is ${dideh} doing")
-	print(directory)
 	--[[sys.save(directory .. "testfile.sum", {hi = "something", score = 4, ssn = 6940})
 	local file = io.open(directory .. "testfile.sum", "rb")
 	local inf = file:read("*a")
@@ -19,7 +18,6 @@ function init(self)
 	end]]
 	self.colLoaded = nil
 	msg.post(".", "acquire_input_focus")
-	print("hi")
 	pcall(msg.post, "#proxy_mapcreator", "unload", {})
 	msg.post("/go1#scriptloader", "scriptinfo", {id = 3, type = "baka", scriptname = "script.lua", modname = "newMod", mapname = "newMap"})
 	--[[local f = io.open(directory .. "128px_1_copy.atlas", "r")
@@ -81,7 +79,7 @@ function on_message(self, message_id, message, sender)
 		msg.post(sender, "final")
 		msg.post(sender, "disable")
 		msg.post(sender, "unload")
-		self.colLoaded = false
+		self.colLoaded = nil
 	end
 
 	if message_id == hash("unload_proxy") then

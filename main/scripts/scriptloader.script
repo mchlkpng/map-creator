@@ -26,6 +26,8 @@ Optimize game
 include fact vars are accessable thru var table
 ]]
 
+go.property("texture", hash("/main/atlases/pix/128px/128.px_1.texturesetc"))
+
 function gvars()
     return vars
 end
@@ -59,6 +61,7 @@ function defineVars(self)
     self.animations = {}
     self.colboxes = {}
     self.colboxinfo = {}
+    self.resourceTbl = {}
     self.scriptLoaded = false
     self.animTimer = nil
     self.currentTex = nil
@@ -97,6 +100,7 @@ function getVar(id, var)
     return vars[id][var]
 end
 
+
 -- gets mod .encr file from requested server. If the encr file is already loaded in game, it just uses that instead of wasting time decrypting.
 function loadEnc(self, mod, fromHTTP, server, callback)
     if encMods[mod] then
@@ -124,6 +128,65 @@ function setTexture(name)
     msg.post("#", "setTexture", {name = name})
 end
 
+
+function getResources(self, callback)
+    local ref = "mods/"..self.modname.."/"..self.type.."/resources.json"
+    if self.fromDir then
+        local path = directory .. fl
+        if loadedFiles[path] then
+            local jt = loadedFiles[path]
+            callback(jt)
+            return
+        end
+
+        local file = io.open(globals.directory() .. ref, "r")
+        local jinfo
+        if file then
+            jinfo = file:read("*a")
+            file:close()
+        elseif not file and io.open(globals.directory().."mods/"..self.modname.."/"..self.modname..".encr", "rb") then
+            io.close()
+            local jinfo = loadEnc(self, self.modname, false)["/"..ref]
+        else
+            error("file '" .. globals.directory() .. ref .. "' couldn't be found, nor a .encr file")
+        end
+
+
+        local jt = json.decode(jinfo)
+        loadedFiles[path] = jt
+        callback(jt)
+        
+    else
+        local worked = pcall(loadEnc, self, self.modname, true, self.modserver, function(id, response, decTb)
+            if response.status == 304 or response.status == 200 then
+                local jt = json.decode(decTb["/"..ref])
+                callback(jt)
+            else
+                print("Couldn't get encr file of "..self.modname.." mod. Error Code: " .. response.status)
+                if loadedFiles[ref] then
+                    local jt = loadedFiles[ref]
+                    callback(jt)
+                    return
+                end
+
+                http.request(self.modserver.."/"..ref, "GET", function(self, id, response)
+                    if response.status == 304 or 200 then
+                        local jt = json.decode(response.response)
+                        loadedFiles[ref] = jt
+                        callback(jt)
+                    else
+                        error("Couldnt get resource.json of " .. self.modname)
+                    end
+                end)
+            end
+        end)
+
+        if not worked then
+
+        end
+    end
+end
+
 --Loads mod script by filename
 function loadScript(self, scrname, callback)
     if not scrname:find(".lua") then
@@ -134,7 +197,7 @@ function loadScript(self, scrname, callback)
     local fl = "mods/" .. self.modname .. "/" .. self.type .. "/" .. scrname
     local fl2 = "mods/" .. self.modname .. "/" .. self.type .. "_" .. scrname
     if self.fromDir then
-        path = directory .. fl
+        local path = directory .. fl
         if loadedFiles[path] then
             callback(loadedFiles[path])
             return
@@ -162,7 +225,6 @@ function loadScript(self, scrname, callback)
             end
             
             loadedFiles[path] = script
-            callback(loadstring(script))
             return
         end
     else
@@ -299,7 +361,10 @@ function getSprites(self, spriteSheets, textures, allocs)
             end
             if using ~= "exists" then
                 if using then
-                    go.set("#sprite", "image", hash("/main/atlases/pix/" .. res .. "px/" .. using .. ".texturesetc"))
+                    go.set("#", "texture", hash("/main/atlases/pix/" .. res .. "px/" .. using .. ".texturesetc"))
+
+                    print("texture", go.get("#", "texture"))
+                    go.set("#sprite", "image", go.get("#", "texture"))
                     local ee = imageloader.load{data = textures[w]}
                     resource.set_texture(go.get("#sprite", "texture0"), ee.header, ee.buffer)
                     takenTextures[using] = {texName = w, res = res, texture = self.textures[w], alloc = allocs[w], mod = self.modname}
@@ -688,63 +753,76 @@ function on_message(self, message_id, message, sender)
         msg.post("/jsonloader#json", "getserver", {mod = self.modname})
         vars[self.id] = {}
 
-        loadScript(self, message.scriptname, function(f)
-            f()
-            self.resources, self.collisions, self.spriteSheets, self.sheetAlloc = loadResources()
-            local sussyB = getTextures(self, self.resources, function(tex, anDe)
-                print("tex got")
-                self.resources.animations = anDe[1]
-                self.resources.defaultTex = anDe[2]
-                self.resources.defaultSprite = anDe[3]
-                self.textures = tex
-                getSprites(self, self.spriteSheets, self.textures, self.sheetAlloc)
+        getResources(self, function(resourceTbl)
+            self.resourceTbl = resourceTbl
 
-                self.animations = self.resources.animations
+            loadScript(self, message.scriptname, function(f)
+                f()
+                self.resources = resourceTbl.files
+                self.resources.animations = resourceTbl.animations
+                self.resources.defaultTex = resourceTbl.defaults.defaultTex
+                self.resources.defaultSprite = resourceTbl.defaults.defaultSprite
 
-                local eee = getIKey(self.collisions, self.resources.defaultSprite)
-                self.colboxes, self.colboxinfo = globals.setCollision(self, eee)
+                --pprint("id", self.id, self.resources)
+                self.collisions = resourceTbl.collisions
+                self.spriteSheets = resourceTbl.spriteSheets
+                self.sheetAlloc = resourceTbl.sheetAlloc
 
-
-                if self.animations.defaultAnim then
-                    self.defaultAnim = self.animations.defaultAnim
-                    animate(self, self.defaultAnim, {"default"})
-                elseif self.resources.defaultTex then
-                    self.defaultTex = self.resources.defaultTex
-                    setSprite(self.resources.defaultSprite)
-                end
-                if self.mode == "ingame" then
-                    self.scriptLoaded = true
-                    initialize(self.id)
-                end
-            end)
-            if sussyB then
-                print("hehe sussyB")
-                self.textures = sussyB
-
-                if self.textures then
-
+                local sussyB = getTextures(self, self.resources, function(tex, anDe)
+                    print("tex got")
+                    self.resources.animations = anDe[1]
+                    self.resources.defaultTex = anDe[2]
+                    self.resources.defaultSprite = anDe[3]
+                    self.textures = tex
                     getSprites(self, self.spriteSheets, self.textures, self.sheetAlloc)
-                    
-                    if globals.tablelen(self.textures, false) ~= 0 then
-                        self.animations = self.resources.animations
-                        local eee = getIKey(self.collisions, self.resources.defaultSprite)
-                        self.colboxes, self.colboxinfo = globals.setCollision(self, eee)
-                        
-                        if self.animations.defaultAnim then
-                            self.defaultAnim = self.animations.defaultAnim
-                            animate(self, self.defaultAnim, {"default"})
-                        elseif self.resources.defaultTex then
-                            self.defaultTex = self.resources.defaultTex
-                            setSprite(self.resources.defaultSprite)
-                        end
 
-                        if self.mode == "ingame" then
+                    self.animations = self.resources.animations
+
+                    local eee = getIKey(self.collisions, self.resources.defaultSprite)
+                    self.colboxes, self.colboxinfo = globals.setCollision(self, eee)
+
+
+                    if self.animations.defaultAnim then
+                        self.defaultAnim = self.animations.defaultAnim
+                        animate(self, self.defaultAnim, "default")
+                    elseif self.resources.defaultTex then
+                        self.defaultTex = self.resources.defaultTex
+                        setSprite(self.resources.defaultSprite)
+                    end
+                    if self.mode == "ingame" then
                         self.scriptLoaded = true
                         initialize(self.id)
+                    end
+                end)
+                if sussyB then
+                    print("hehe sussyB")
+                    self.textures = sussyB
+
+                    if self.textures then
+
+                        getSprites(self, self.spriteSheets, self.textures, self.sheetAlloc)
+                        
+                        if globals.tablelen(self.textures, false) ~= 0 then
+                            self.animations = self.resources.animations
+                            local eee = getIKey(self.collisions, self.resources.defaultSprite)
+                            self.colboxes, self.colboxinfo = globals.setCollision(self, eee)
+                            
+                            if self.animations.defaultAnim then
+                                self.defaultAnim = self.animations.defaultAnim
+                                animate(self, self.defaultAnim, "default")
+                            elseif self.resources.defaultTex then
+                                self.defaultTex = self.resources.defaultTex
+                                setSprite(self.resources.defaultSprite)
+                            end
+
+                            if self.mode == "ingame" then
+                            self.scriptLoaded = true
+                            initialize(self.id)
+                            end
                         end
                     end
                 end
-            end
+            end)
         end)
     end
 
@@ -757,8 +835,8 @@ function on_message(self, message_id, message, sender)
 
         local texname = ttByName[name]
         local tinf = takenTextures[texname]
-
-        go.set("#sprite", "image", hash("/main/atlases/pix/" .. tinf.res .. "px/" .. texname .. ".texturesetc"))
+        go.set("#", "texture", hash("/main/atlases/pix/" .. tinf.res .. "px/" .. texname .. ".texturesetc"))
+        go.set("#sprite", "image", go.get("#", "texture"))
         self.currentTex = name
     end
 
