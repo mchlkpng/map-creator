@@ -24,7 +24,7 @@ function init(self)
 	--[[globals.getEncrypted("oldMod", true, globals.hostname(true), function(id, reponse, decTb)
 		pprint(decTb)
 	end)]]
-	--timer.delay(1, false, function()msg.post("#", "encModDisk", {mod = "oldMod2", encNum = 2})end)
+	--timer.delay(1, false, function()msg.post("#", "encMod", {server = globals.hostname(true), mod = "oldMod", encNum = 2})end)
 end
 
 function final(self)
@@ -74,23 +74,24 @@ function on_message(self, message_id, message, sender)
 				path = "/" .. message.mod .. "/" .. i .. "/" .. w
 				--do something here for loading
 				local file
-
-				if path:find(".png") or path:find(".jpg") then
-					file = io.open(directory .. "mods" .. path, "rb")
-				else
-					file = io.open(directory .. "mods" .. path, "r")
-				end
-				if file then
-					local inf = file:read("*a")
-					file:close()
+				if not path:find(".encr") then
 					if path:find(".png") or path:find(".jpg") then
-						encTable[w] = inf
+						file = io.open(directory .. "mods" .. path, "rb")
 					else
-						encTable[w] = globals.encrypt(inf, message.encNum)
+						file = io.open(directory .. "mods" .. path, "r")
 					end
-					
-				else
-					print("File '" .. path .. "' doesn't seem to exist.")
+					if file then
+						local inf = file:read("*a")
+						file:close()
+						if path:find(".png") or path:find(".jpg") then
+							encTable[w] = inf
+						else
+							encTable[w] = globals.encrypt(inf, message.encNum)
+						end
+						
+					else
+						print("File '" .. path .. "' doesn't seem to exist.")
+					end
 				end
 			end
 		end
@@ -115,6 +116,7 @@ function on_message(self, message_id, message, sender)
 		lfs.chdir(normDir)
 
 		if not message.redownload and select(1, io.open(directory .. "/maps/" .. message.map)) then
+			io.close()
 			print("The map '" .. message.map .. "' is already downloaded on this device!")
 			return
 		else
@@ -159,7 +161,6 @@ function on_message(self, message_id, message, sender)
 			lfs.chdir(directory)
 			local worked = pcall(http.request, message.server .. "/mods" .. v, "GET", function(sel, iD, res)
 				local filename = v:gsub("/" .. message.mod .. "/", "")
-				filename = filename:gsub("/", "_")
 				if res.status == 200 or res.status == 304 then
 					if not lfs.chdir("mods") then
 						lfs.mkdir("mods")
@@ -230,17 +231,19 @@ function on_message(self, message_id, message, sender)
 						lfs.mkdir(message.mod)
 					end
 					lfs.chdir(normDir)
-					if v:find(".png") or v:find(".jpg") then
-						encFiles[v] = res.response
-					else
-						encFiles[v] = globals.encrypt(res.response, message.encNum)
-					end
-						
-					if cnt == needed then
-						local file = io.open(directory .. "mods/" .. message.mod .. "/" .. message.mod .. ".encr", "wb")
-						file:write(sys.serialize(encFiles))
-						file:flush()
-						file:close()
+					if not v:find(".encr") then
+						if v:find(".png") or v:find(".jpg") then
+							encFiles[v] = res.response
+						else
+							encFiles[v] = globals.encrypt(res.response, message.encNum)
+						end
+							
+						if cnt == needed then
+							local file = io.open(directory .. "mods/" .. message.mod .. "/" .. message.mod .. ".encr", "wb")
+							file:write(sys.serialize(encFiles))
+							file:flush()
+							file:close()
+						end
 					end
 
 

@@ -32,7 +32,7 @@ local function loadLevel(self, lvl, fromDir, callback)
 			end
 			local function cb(id, res, tb)
 				if res.status == 200 or res.status == 204 then
-					print("Mod '" .. v .. "downloaded.")
+					print("Mod '" .. v .. "' downloaded.")
 				else
 					print("Couldn't download mod '" .. v ..".")
 				end

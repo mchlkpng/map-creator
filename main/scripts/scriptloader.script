@@ -2,6 +2,7 @@ local sandbox = require "lua_modules.sandbox"
 local checkit = require "lua_modules.heProtecc"
 local globals = require "lua_modules.globals"
 local directory = sys.get_save_file("mpcreator", "directory.dir")
+local jsao = require "lua_modules.json"
 directory = directory:gsub("directory.dir", "")
 local mapname
 local encMods = {}
@@ -26,7 +27,7 @@ Optimize game
 include fact vars are accessable thru var table
 ]]
 
-go.property("texture", hash("/main/atlases/pix/128px/128.px_1.texturesetc"))
+go.property("texture", resource.atlas("/main/atlases/pix/128px/128px_2.atlas"))
 
 function gvars()
     return vars
@@ -51,6 +52,8 @@ end
 function getInput()
     msg.post(".", "acquire_input_focus")
 end
+
+vmath.clear = globals.clearVector
 
 function defineVars(self)
     self.position = {x = 0, y = 0, z = 0}
@@ -130,59 +133,61 @@ end
 
 
 function getResources(self, callback)
-    local ref = "mods/"..self.modname.."/"..self.type.."/resources.json"
+    local ref = "mods/"..self.modname.."/resources/resources.json"
     if self.fromDir then
         local path = directory .. fl
         if loadedFiles[path] then
             local jt = loadedFiles[path]
             callback(jt)
-            return
-        end
-
-        local file = io.open(globals.directory() .. ref, "r")
-        local jinfo
-        if file then
-            jinfo = file:read("*a")
-            file:close()
-        elseif not file and io.open(globals.directory().."mods/"..self.modname.."/"..self.modname..".encr", "rb") then
-            io.close()
-            local jinfo = loadEnc(self, self.modname, false)["/"..ref]
         else
-            error("file '" .. globals.directory() .. ref .. "' couldn't be found, nor a .encr file")
+
+            local file = io.open(globals.directory() .. ref, "r")
+            local jinfo
+            if file then
+                jinfo = file:read("*a")
+                file:close()
+            elseif not file and io.open(globals.directory().."mods/"..self.modname.."/"..self.modname..".encr", "rb") then
+                io.close()
+                local decref = ("/"..ref):gsub("/mods/", "")
+                jinfo = decTb["/"..decref]
+            else
+                error("file '" .. globals.directory() .. ref .. "' couldn't be found, nor a .encr file")
+            end
+
+
+            local jt = json.decode(jinfo)
+            loadedFiles[path] = jt
+            callback(jt)
         end
-
-
-        local jt = json.decode(jinfo)
-        loadedFiles[path] = jt
-        callback(jt)
         
     else
-        local worked = pcall(loadEnc, self, self.modname, true, self.modserver, function(id, response, decTb)
+        local worked, err = pcall(loadEnc, self, self.modname, true, self.modserver, function(id, response, decTb)
             if response.status == 304 or response.status == 200 then
-                local jt = json.decode(decTb["/"..ref])
+                local decref = ("/"..ref):gsub("/mods/", "")
+                local jt = jsao.decode(decTb["/"..decref])
                 callback(jt)
             else
                 print("Couldn't get encr file of "..self.modname.." mod. Error Code: " .. response.status)
                 if loadedFiles[ref] then
                     local jt = loadedFiles[ref]
                     callback(jt)
-                    return
-                end
+                else
 
-                http.request(self.modserver.."/"..ref, "GET", function(self, id, response)
-                    if response.status == 304 or 200 then
-                        local jt = json.decode(response.response)
-                        loadedFiles[ref] = jt
-                        callback(jt)
-                    else
-                        error("Couldnt get resource.json of " .. self.modname)
-                    end
-                end)
+                    http.request(self.modserver.."/"..ref, "GET", function(self, id, response)
+                        if response.status == 304 or 200 then
+                            local jt = json.decode(response.response)
+                            loadedFiles[ref] = jt
+                            callback(jt)
+                        else
+                            error("Couldnt get resource.json of " .. self.modname)
+                        end
+                    end)
+                end
             end
         end)
 
         if not worked then
-
+            print(err)
         end
     end
 end
@@ -230,9 +235,9 @@ function loadScript(self, scrname, callback)
     else
         --if not loading mod from directory, it tries to download .encr file. If that doesn't exist,
         --it tries to download the script directly from the server.
-            local worked2 = pcall(loadEnc, self, self.modname, true, self.modserver, function(id, response, decTb)
+            local worked2, err = pcall(loadEnc, self, self.modname, true, self.modserver, function(id, response, decTb)
                 if response.status == 200 or response.status == 304 then
-                    script = decTb[scrname]
+                    script = decTb["/"..self.modname.."/"..self.type.."/"..scrname]
                     if script:byte(1) == 27 then
                         error("Bytecode is not allowed!")
                         return false
@@ -292,7 +297,7 @@ function loadScript(self, scrname, callback)
             end)
 
         if not worked2 then
-            
+            pprint(err)
         end
     end
 end
@@ -329,13 +334,20 @@ function getSprites(self, spriteSheets, textures, allocs)
     local res
     local needtosave = {}
     for i, v in pairs(spriteSheets) do
+        if not string.match(i, "_%d+px") then
+            error("incorrect texture resolution: ".. i.."\n all texture resoutions must be powers of 2 from 16-2046.")
+            return
+        end
+
         for j, w in ipairs(v) do
             for k = 1, 16 do
+                print("a thing", k, self.id)
                 local checking = string.gsub(i, "_", "").."_"..tostring(k)
                 res = string.gsub(checking, "px_" .. tostring(k), "")
 
                 if not takenTextures[checking] then
                     using = checking
+                    pprint("tis ok", checking, takenTextures[checking], self.id)
                     break
                 end
 
@@ -344,35 +356,43 @@ function getSprites(self, spriteSheets, textures, allocs)
                 if same then
                     print("texture '" .. w .. "' already exits. Using texture.")
                     using = "exists"
+                    print("good ", checking, self.id, diff)
                     break
                 elseif not same and diff == "same data" then
                     print("A texture under a different name has the same image data! Using that instead.")
                     ttByName[w] = checking
                     using = "exists"
+                    print("good ", checking, self.id, diff)
                     break
                 elseif not same and diff == "same name" then
                     print("Theres already a texture with this name! Don't worry, we're saving it as '" .. self.modname.."-".. w .. "' so it can still be used.")
                     table.insert(needtosave, {name = self.modname.."-"..w, texName = w, texture = texture[w]})
+                    using = "exists"
+                    print("good ", checking, self.id, diff)
                     break
                 end
 
-                
-                if using then break end
+                print("using is ", using)
+                if using then print("good ", checking, self.id); break else print("not good ", checking, self.id) end
             end
             if using ~= "exists" then
+                pprint("tis nok", using, takenTextures[using])
                 if using then
                     go.set("#", "texture", hash("/main/atlases/pix/" .. res .. "px/" .. using .. ".texturesetc"))
 
-                    print("texture", go.get("#", "texture"))
-                    go.set("#sprite", "image", go.get("#", "texture"))
+                    print("texture", using)
+                    local url = go.get("#", "texture")
+                    go.set("#sprite", "image", url)
                     local ee = imageloader.load{data = textures[w]}
                     resource.set_texture(go.get("#sprite", "texture0"), ee.header, ee.buffer)
                     takenTextures[using] = {texName = w, res = res, texture = self.textures[w], alloc = allocs[w], mod = self.modname}
                     ttByName[w] = using
+                    print(self.id..": "..using)
                 else
                     print("No atlases left for resolution " .. res .. " or this name already exists.")
                 end
             end
+            print("ok")
         end
         
         if #needtosave ~= 0 then
@@ -405,7 +425,8 @@ function getSprites(self, spriteSheets, textures, allocs)
                 end
                 if using ~= "exists" then
                     if using then
-                        go.set("#sprite", "image", hash("/main/atlases/pix/" .. res .. "px/" .. using .. ".texturesetc"))
+                        go.set("#", "texture", hash("/main/atlases/pix/" .. res .. "px/" .. using .. ".texturesetc"))
+                        go.set("#sprite", "image", go.get("#", "texture"))
                         local ee = imageloader.load{data = textures[w.texName]}
                         resource.set_texture(go.get("#sprite", "texture0"), ee.header, ee.buffer)
                         takenTextures[using] = {texName = w.name, res = res, texture = self.textures[w.texName], alloc = allocs[w.texName], mod = self.modname}
@@ -447,13 +468,11 @@ function getTextures(self, files, callback)
     
     local ttable = {}
     for i, v in ipairs(ffiles) do
-        if type(v) == "table" then
-            --nothing lol
-        else
+        if type(v) ~= "table" then
             local texture = ""
             --local w 
             --if string.match(v, "/") then w = v:gsub("/", "_") else w = v end
-            local fl = "mods/" .. self.modname .. "/" .. self.type .. "/" .. v
+            local fl = "mods/" .. self.modname .. "/resources/" .. v
             local fl2 = "mods/" .. self.modname .. "/" .. self.type .. "_" .. v
             local texture = ""
             if self.fromDir then
@@ -483,16 +502,18 @@ function getTextures(self, files, callback)
                 
             else
                 local dtable = {}
-                local worked2 = pcall(loadEnc, self, self.modname, true, self.modserver, function(id, response, decTb)
+                local worked2, err = pcall(loadEnc, self, self.modname, true, self.modserver, function(id, response, decTb)
                     if response.status == 200 or response.status == 304 then
-                       texture = decTb[v]
-                       ttable[v] = texture
-                       if globals.tablelen(ttable, false) == globals.tablelen(ffiles, false) then
-                           ffiles.animations = anAndD[1]
-                           ffiles.defaultTex = anAndD[2]
-                           ffiles.defaultSprite = anAndD[3]
+                        texture = decTb["/"..self.modname.."/resources/"..v]
+                        ttable[v] = texture
+                        if globals.tablelen(ttable, false) == globals.tablelen(ffiles, false) then
+                            ffiles.animations = anAndD[1]
+                            ffiles.defaultTex = anAndD[2]
+                            ffiles.defaultSprite = anAndD[3]
                             callback(ttable, anAndD)
-                       end
+                        else
+                            print("ttable", globals.tablelen(ttable, false), "ffiles", globals.tablelen(ffiles, false))
+                        end
                     else
                         --print("Couldn't get encr file of '" .. self.modname .. "'. Error Code: " .. response.status)
                         if loadedFiles[fl] then
@@ -546,6 +567,7 @@ function animate(self, id, tb, callback)
             framerate = tb.framerate
             playback = tb.playback
         else
+            pprint(tb)
             error("Parameter 'tb' must be a string 'default' or a table that can only take 2 values:\n{framerate = (num), playback = (playback type)}")
         end
     else
@@ -739,6 +761,7 @@ function on_message(self, message_id, message, sender)
         end
         go.set(".", "euler", self.extraData.rotation)
         go.set("#sprite", "tint", self.extraData.color)
+        msg.post("/jsonloader#json", "getserver", {mod = self.typedata.mod})
 
         timer.delay(0.2, false, function()
             msg.post("#", "scriptinfo", {id = message.id, type = self.typedata.modtype, modname = self.typedata.mod, mapname = message.mapname, scriptname = self.typedata.script})
@@ -750,11 +773,11 @@ function on_message(self, message_id, message, sender)
         self.type = message.type
         mapname = message.mapname
         self.modname = message.modname
-        msg.post("/jsonloader#json", "getserver", {mod = self.modname})
         vars[self.id] = {}
 
         getResources(self, function(resourceTbl)
             self.resourceTbl = resourceTbl
+            --pprint(resourceTbl)
 
             loadScript(self, message.scriptname, function(f)
                 f()
@@ -773,6 +796,7 @@ function on_message(self, message_id, message, sender)
                     self.resources.animations = anDe[1]
                     self.resources.defaultTex = anDe[2]
                     self.resources.defaultSprite = anDe[3]
+                    print(self.id)
                     self.textures = tex
                     getSprites(self, self.spriteSheets, self.textures, self.sheetAlloc)
 
@@ -794,6 +818,7 @@ function on_message(self, message_id, message, sender)
                         initialize(self.id)
                     end
                 end)
+
                 if sussyB then
                     print("hehe sussyB")
                     self.textures = sussyB
