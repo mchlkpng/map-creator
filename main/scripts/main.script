@@ -9,6 +9,7 @@ end
 
 function init(self)
 	processString("hello ${idoat}, how is ${dideh} doing")
+	--sys.open_url("C://Users/danny/documents/defold projs/macr-server/src/mods/oldMod/resources/resources.json")
 	--[[sys.save(directory .. "testfile.sum", {hi = "something", score = 4, ssn = 6940})
 	local file = io.open(directory .. "testfile.sum", "rb")
 	local inf = file:read("*a")

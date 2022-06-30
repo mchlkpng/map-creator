@@ -167,7 +167,6 @@ function getResources(self, callback)
                 local jt = jsao.decode(decTb["/"..decref])
                 callback(jt)
             else
-                print("Couldn't get encr file of "..self.modname.." mod. Error Code: " .. response.status)
                 if loadedFiles[ref] then
                     local jt = loadedFiles[ref]
                     callback(jt)
@@ -340,14 +339,13 @@ function getSprites(self, spriteSheets, textures, allocs)
         end
 
         for j, w in ipairs(v) do
+            using = nil
             for k = 1, 16 do
-                print("a thing", k, self.id)
                 local checking = string.gsub(i, "_", "").."_"..tostring(k)
                 res = string.gsub(checking, "px_" .. tostring(k), "")
 
                 if not takenTextures[checking] then
                     using = checking
-                    pprint("tis ok", checking, takenTextures[checking], self.id)
                     break
                 end
 
@@ -356,43 +354,35 @@ function getSprites(self, spriteSheets, textures, allocs)
                 if same then
                     print("texture '" .. w .. "' already exits. Using texture.")
                     using = "exists"
-                    print("good ", checking, self.id, diff)
                     break
                 elseif not same and diff == "same data" then
                     print("A texture under a different name has the same image data! Using that instead.")
                     ttByName[w] = checking
                     using = "exists"
-                    print("good ", checking, self.id, diff)
                     break
                 elseif not same and diff == "same name" then
                     print("Theres already a texture with this name! Don't worry, we're saving it as '" .. self.modname.."-".. w .. "' so it can still be used.")
                     table.insert(needtosave, {name = self.modname.."-"..w, texName = w, texture = texture[w]})
                     using = "exists"
-                    print("good ", checking, self.id, diff)
                     break
                 end
 
-                print("using is ", using)
-                if using then print("good ", checking, self.id); break else print("not good ", checking, self.id) end
+                if using then break end
             end
             if using ~= "exists" then
-                pprint("tis nok", using, takenTextures[using])
                 if using then
                     go.set("#", "texture", hash("/main/atlases/pix/" .. res .. "px/" .. using .. ".texturesetc"))
 
-                    print("texture", using)
                     local url = go.get("#", "texture")
                     go.set("#sprite", "image", url)
                     local ee = imageloader.load{data = textures[w]}
                     resource.set_texture(go.get("#sprite", "texture0"), ee.header, ee.buffer)
                     takenTextures[using] = {texName = w, res = res, texture = self.textures[w], alloc = allocs[w], mod = self.modname}
                     ttByName[w] = using
-                    print(self.id..": "..using)
                 else
                     print("No atlases left for resolution " .. res .. " or this name already exists.")
                 end
             end
-            print("ok")
         end
         
         if #needtosave ~= 0 then
@@ -611,7 +601,7 @@ function animate(self, id, tb, callback)
                 end
             end)
         elseif playback:find("PINGPONG") then
-            local frame = 0
+            local frame = 1
             setSprite(frames[1], true)
             self.animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
                 frame = frame + 1
@@ -633,30 +623,30 @@ function animate(self, id, tb, callback)
     if playback:find("LOOP") then
         if playback:find("FORWARD") then
             setSprite(frames[1], true)
-            local frame = 0
+            local frame = 1
             self.animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
                 frame = frame + 1
                 if frame > #frames then
                     if callback then callback() end
-                    frame = 1
+                    frame = 0
                 end
                 
                 setSprite(frames[frame], true)
             end)
         elseif playback:find("BACKWARD") then
-            local frame = #frames + 1
+            local frame = #frames
             setSprite(frames[frame], true)
             self.animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
                 frame = frame - 1
                 if frame == 0 then
                     if callback then callback() end
-                    frame = #frames
+                    frame = #frames + 1
                 end
                 
                 setSprite(frames[frame], true)
             end)
         elseif playback:find("PINGPONG") then
-            local frame = 0
+            local frame = 1
             setSprite(frames[1], true)
             self.animTimer = timer.delay(1/framerate, true, function(self, handle, elapsedTime)
                 frame = frame + 1
@@ -796,7 +786,6 @@ function on_message(self, message_id, message, sender)
                     self.resources.animations = anDe[1]
                     self.resources.defaultTex = anDe[2]
                     self.resources.defaultSprite = anDe[3]
-                    print(self.id)
                     self.textures = tex
                     getSprites(self, self.spriteSheets, self.textures, self.sheetAlloc)
 
