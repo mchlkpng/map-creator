@@ -139,6 +139,11 @@ function update(self, dt)
 		room:on_message("starting", function(message)
 			msg.post("/objManager#script", "starting")
 		end)
+
+		room.state.custom["on_change"] = function(custom, key)
+			print("state changed")
+			pprint(custom)
+		end
 	end
 end
 

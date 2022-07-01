@@ -9,6 +9,7 @@ dependencies#4 = https://github.com/britzl/defold-metrics/archive/master.zip
 dependencies#5 = https://github.com/defold/extension-websocket/archive/refs/tags/3.0.0.zip
 dependencies#6 = https://github.com/britzl/defold-luasocket/archive/refs/tags/0.11.1.zip
 dependencies#7 = https://github.com/colyseus/colyseus-defold/archive/0.14.1.zip
+dependencies#8 = https://github.com/Lerg/extension-imageloader/archive/master.zip
 
 [bootstrap]
 main_collection = /main/collections/sus.collectionc
