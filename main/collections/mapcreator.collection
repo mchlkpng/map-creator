@@ -439,7 +439,7 @@ embedded_instances {
   id: "objManager"
   data: "components {\n"
   "  id: \"script\"\n"
-  "  component: \"/main/scripts/ObjManager.script\"\n"
+  "  component: \"/main/scripts/objManager.script\"\n"
   "  position {\n"
   "    x: 0.0\n"
   "    y: 0.0\n"

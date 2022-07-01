@@ -273,6 +273,10 @@ function globals.setCollision(self,COLLISION, negX, x, negY, y)
 	else
 		negx = negX; negy = negY; xs = x; ys = y
 	end
+	if (negx or negy or xs or ys) == nil then
+		error("There was a problem making collisions: negx: ".. tostring(negx) ..", negy: " .. tostring(negy) .. ", x: " .. tostring(xs) .. ", y: ".. tostring(ys))
+	end
+
 	local colboxes = {}
 	local colboxinfo = {}
 	local position = go.get_position() 

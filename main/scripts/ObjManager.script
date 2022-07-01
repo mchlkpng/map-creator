@@ -65,8 +65,6 @@ function on_message(self, message_id, message, sender)
 
 			if self.collection == "ingame" then
 				msg.post("/player#player", "allLoaded")
-			elseif self.collection == "multiplayer" then
-				--msg.post("/player#mPlayer", "allLoaded")
 			end
 		end
 	end
@@ -77,15 +75,9 @@ function on_message(self, message_id, message, sender)
 		self.collection = message.collection
 	end
 
-	if message_id == hash("control") then
+	if message_id == hash("starting") then
 		for i, v in ipairs(self.objs) do
-			if findInTable(message.ids, i, true) then
-				print(i)
-				self.objs[i].data.controlled = true
-			elseif v.type == "custom" then
-				self.objs[i].data.controlled = false
-			end
-			msg.post(globals.hash_to_string(v.obj), "data", v.data)
+			msg.post(v.obj, "data", v.data)
 		end
 
 		msg.post("/player#mPlayer", "allLoaded")

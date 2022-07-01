@@ -1,5 +1,5 @@
 components {
-  id: "mScriptloader"
+  id: "script"
   component: "/main/scripts/multiplayer/mScriptloader.script"
   position {
     x: 0.0

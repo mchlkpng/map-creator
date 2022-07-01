@@ -103,40 +103,41 @@ function update(self, dt)
 				msg.post("/jsonloader#mJson", "done", {mapname = message.mapname})
 			end
 
-			for i, v in ipairs(self.map.mods) do
-				if not room.state.resources[v] then
-					local server = self.map.modservers[v]
-					if server == "mainserver" then server = globals.hostname(true) end
-					if string.sub(server, -1) ~= "/" then server = server .. "/" end
+			if message.fetchRes then
+				for i, v in ipairs(self.map.mods) do
+					if not room.state.resources[v] then
+						local server = self.map.modservers[v]
+						if server == "mainserver" then server = globals.hostname(true) end
+						if string.sub(server, -1) ~= "/" then server = server .. "/" end
 
-					local worked, err = pcall(globals.getEncrypted, v, true, server, function(id, response, decTb)
-						if response.status == 200 or response.status == 304 then
-							local res = decTb["/"..mod.."/resources/resources.json"]
-							if res then
-								room:send("modres", {mod = v, resJson = decTb["/"..mod.."/resources/resources.json"]})
-							else
-								print("resources.json file couldnt be found for mod '" .. mod .. "'.")
-							end
-						else
-							http.request(server.."mods/"..v.."/resources/resources.json", "GET", function(self, id, response)
-								if response.status == 200 or response.status == 304 then
-									room:send("modres", {mod = v, resJson = response.response})
+						local worked, err = pcall(globals.getEncrypted, v, true, server, function(id, response, decTb)
+							if response.status == 200 or response.status == 304 then
+								local res = decTb["/"..mod.."/resources/resources.json"]
+								if res then
+									room:send("modres", {mod = v, resJson = decTb["/"..mod.."/resources/resources.json"]})
 								else
 									print("resources.json file couldnt be found for mod '" .. mod .. "'.")
 								end
-							end)
-						end
-					end)
+							else
+								http.request(server.."mods/"..v.."/resources/resources.json", "GET", function(self, id, response)
+									if response.status == 200 or response.status == 304 then
+										room:send("modres", {mod = v, resJson = response.response})
+									else
+										print("resources.json file couldnt be found for mod '" .. mod .. "'.")
+									end
+								end)
+							end
+						end)
 
-					if not worked then print(err) end
+						if not worked then print(err) end
+					end
 				end
 			end
 
 		end)
 
-		room:on_message("controlling", function(message)
-			pprint(message.ids)
-			msg.post("/objManager#script", "control", {ids = message.ids})
+		room:on_message("starting", function(message)
+			msg.post("/objManager#script", "starting")
 		end)
 	end
 end
