@@ -213,9 +213,16 @@ function globals.getEncrypted(mod, fromHTTP, server, callback)
 		callback("sus", {status = 200, response = "urmom"}, ddMods[mod])
 		return ddMods[mod]
 	end
-	
+
+	local serv
+	if server:sub(-1) ~= "/" then
+		serv = server .. "/"
+	else
+		serv = server
+	end
+
 	if fromHTTP then
-		http.request(server .. "/mods/" .. mod .. "/" .. mod .. ".encr", "GET", function(self, id, response)
+		http.request(serv .. "mods/" .. mod .. "/" .. mod .. ".encr", "GET", function(self, id, response)
 			if response.status == 200 or response.status == 304 then
 				local tb = sys.deserialize(response.response)
 				local decTb = {}

@@ -329,8 +329,6 @@ function checkTexIfSame(texname, tex, ttex)
 end
 
 function getSprites(self, spriteSheets, textures, allocs)
-    local using
-    local res
     local needtosave = {}
     for i, v in pairs(spriteSheets) do
         if not string.match(i, "_%d+px") then
@@ -339,7 +337,8 @@ function getSprites(self, spriteSheets, textures, allocs)
         end
 
         for j, w in ipairs(v) do
-            using = nil
+            local using
+            local res
             for k = 1, 16 do
                 local checking = string.gsub(i, "_", "").."_"..tostring(k)
                 res = string.gsub(checking, "px_" .. tostring(k), "")
@@ -387,6 +386,8 @@ function getSprites(self, spriteSheets, textures, allocs)
         
         if #needtosave ~= 0 then
             for j, w in ipairs(needtosave) do
+                local using
+                local res
                 for k = 1, 16 do
                     local checking = string.gsub(i, "_", "").."_"..tostring(k)
                     res = string.gsub(checking, "px_" .. tostring(k), "")
