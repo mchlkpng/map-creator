@@ -337,8 +337,6 @@ function getTextures(self, files, callback)
 				end)
 			end
 		end
-
-
 	end
 end
 

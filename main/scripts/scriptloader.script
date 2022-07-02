@@ -439,12 +439,14 @@ end
 
 --Gets file data of textures by filename
 function getTextures(self, files, callback)
-    local ffiles = files
+    local ffiles = {}
+    for k, v in pairs(files) do
+        ffiles[k] = v
+    end
     if type(ffiles) ~= "table" then
         error("Input must be a table!")
         return
     end
-    local anAndD = {ffiles.animations, ffiles.defaultTex, ffiles.defaultSprite}
     if ffiles.animations then
         ffiles.animations = nil
     end
@@ -455,7 +457,7 @@ function getTextures(self, files, callback)
     if ffiles.defaultSprite then
         ffiles.defaultSprite = nil
     end
-    
+
     local ttable = {}
     for i, v in ipairs(ffiles) do
         if type(v) ~= "table" then
@@ -484,32 +486,33 @@ function getTextures(self, files, callback)
                     end
                 end
                 if globals.tablelen(ttable, false) == globals.tablelen(ffiles, false) then
-                    ffiles.animations = anAndD[1]
-                    ffiles.defaultTex = anAndD[2]
-                    ffiles.defaultSprite = anAndD[3]
                     return ttable
                 end
-                
+
             else
+
                 local dtable = {}
                 local worked2, err = pcall(loadEnc, self, self.modname, true, self.modserver, function(id, response, decTb)
                     if response.status == 200 or response.status == 304 then
                         texture = decTb["/"..self.modname.."/resources/"..v]
                         ttable[v] = texture
                         if globals.tablelen(ttable, false) == globals.tablelen(ffiles, false) then
-                            ffiles.animations = anAndD[1]
-                            ffiles.defaultTex = anAndD[2]
-                            ffiles.defaultSprite = anAndD[3]
                             callback(ttable, anAndD)
-                        else
-                            print("ttable", globals.tablelen(ttable, false), "ffiles", globals.tablelen(ffiles, false))
+                            return
                         end
                     else
+
                         --print("Couldn't get encr file of '" .. self.modname .. "'. Error Code: " .. response.status)
                         if loadedFiles[fl] then
                             texture = loadedFiles[fl]
                             ttable[v] = texture
+
+                            if globals.tablelen(ttable, false) == globals.tablelen(ffiles, false) then
+                                callback(ttable)
+                                return
+                            end
                         else
+
                             local worked = pcall(http.request, self.modserver .. "/" .. fl, "GET", function(self, id, res)
                                 if res.status == 200 or res.status == 304 then
                                     texture = res.response
@@ -517,23 +520,18 @@ function getTextures(self, files, callback)
                                     loadedFiles[fl] = texture
 
                                     if globals.tablelen(ttable, false) == globals.tablelen(ffiles, false) then
-                                        ffiles.animations = anAndD[1]
-                                        ffiles.defaultTex = anAndD[2]
-                                        ffiles.defaultSprite = anAndD[3]
-                                        callback(ttable, anAndD)
+                                        callback(ttable)
+                                        return
                                     end
                                 else
                                     print("Couldn't download '" .. v .. "'.")
                                 end
                             end)
                         end
-                        
                     end
                 end)
             end
         end
-
-
     end
 end
 
@@ -765,23 +763,21 @@ function on_message(self, message_id, message, sender)
             self.resourceTbl = resourceTbl
             --pprint(resourceTbl)
 
+            self.resources = resourceTbl.files
+            self.resources.animations = resourceTbl.animations
+            self.resources.defaultTex = resourceTbl.defaults.defaultTex
+            self.resources.defaultSprite = resourceTbl.defaults.defaultSprite
+
+            --pprint("id", self.id, self.resources)
+            self.collisions = resourceTbl.collisions
+            self.spriteSheets = resourceTbl.spriteSheets
+            self.sheetAlloc = resourceTbl.sheetAlloc
+
             loadScript(self, message.scriptname, function(f)
                 f()
-                self.resources = resourceTbl.files
-                self.resources.animations = resourceTbl.animations
-                self.resources.defaultTex = resourceTbl.defaults.defaultTex
-                self.resources.defaultSprite = resourceTbl.defaults.defaultSprite
 
-                --pprint("id", self.id, self.resources)
-                self.collisions = resourceTbl.collisions
-                self.spriteSheets = resourceTbl.spriteSheets
-                self.sheetAlloc = resourceTbl.sheetAlloc
-
-                local sussyB = getTextures(self, self.resources, function(tex, anDe)
+                local sussyB = getTextures(self, self.resources, function(tex)
                     print("tex got")
-                    self.resources.animations = anDe[1]
-                    self.resources.defaultTex = anDe[2]
-                    self.resources.defaultSprite = anDe[3]
                     self.textures = tex
                     getSprites(self, self.spriteSheets, self.textures, self.sheetAlloc)
 
@@ -794,9 +790,11 @@ function on_message(self, message_id, message, sender)
                     if self.animations.defaultAnim then
                         self.defaultAnim = self.animations.defaultAnim
                         animate(self, self.defaultAnim, "default")
-                    elseif self.resources.defaultTex then
-                        self.defaultTex = self.resources.defaultTex
-                        setSprite(self.resources.defaultSprite)
+                    elseif self.resources.defaultSprite then
+                        self.defaultSprite = self.resources.defaultSprite
+                        setSprite(self.defaultSprite)
+                        local eee = getIKey(self.collisions, self.defaultSprite)
+                        self.colboxes, self.colboxinfo = globals.setCollision(self, eee)
                     end
                     if self.mode == "ingame" then
                         self.scriptLoaded = true
@@ -821,8 +819,10 @@ function on_message(self, message_id, message, sender)
                                 self.defaultAnim = self.animations.defaultAnim
                                 animate(self, self.defaultAnim, "default")
                             elseif self.resources.defaultTex then
-                                self.defaultTex = self.resources.defaultTex
-                                setSprite(self.resources.defaultSprite)
+                                self.defaultSprite = self.resources.defaultSprite
+                                setSprite(self.defaultSprite)
+                                local eee = getIKey(self.collisions, self.defaultSprite)
+                                self.colboxes, self.colboxinfo = globals.setCollision(self, eee)
                             end
 
                             if self.mode == "ingame" then
