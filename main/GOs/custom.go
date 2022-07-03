@@ -1,5 +1,5 @@
 components {
-  id: "scriptloader"
+  id: "script"
   component: "/main/scripts/scriptloader.script"
   position {
     x: 0.0

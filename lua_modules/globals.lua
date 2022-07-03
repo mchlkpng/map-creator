@@ -77,6 +77,7 @@ end
 
 function globals.hash_to_string(h)
 	local str = string.gsub(tostring(h), "hash: %[", "")
+	str = string.gsub(str, "url: %[", "")
 	str = string.gsub(str, "%]", "")
 	return str
 end
@@ -339,6 +340,71 @@ function globals.setCollision(self,COLLISION, negX, x, negY, y)
 		end
 	end
 	return colboxes, colboxinfo
+end
+
+function globals.gcf(S)
+	--[[
+	- let g = a positive natural number that is the GCF for a set of non-negative natural numbers S with variable length
+	- The greatest common factor between 0 and any integer A is the value of A itself by the properties of 0, 0/A = 0
+	- The greatest common factor between 1 and any integer A is 1
+	- For any subset {A, B} of S, the greatest common factor of {A, B} is equal in value to the greatest
+	common factor of {B, A%B} - this is known as The Euclidean Algorithm
+	--]]
+
+	--S should be of type table with at least 2 elements
+	if type(S) ~= 'table' then
+		error('expected argument of type table but got ' .. type(S))
+		return
+	end
+
+	--S should have at least 2 elements
+	if #S < 2 then
+		error('expected argument to have at least 2 elements')
+		return
+	end
+
+	local A = S[1] ; local B = S[2] ; local i = 3
+
+	while i <= #S do
+		A, B = S[i], A%S[i]
+
+		if (A == 1 or B == 1) then
+			B = 1
+			break
+		end
+		if (A == 0) then
+			A, B = B, A
+		end
+		i = i+1
+	end
+
+	while B > 1 do
+		local x = B
+		A, B = B, A%B
+	end
+
+	if (B == 0) then
+		A, B = B, A
+	end
+
+	return B
+end
+
+function globals.getCollection(url)
+	local camera  = tostring(url)
+	local camera = string.gsub(camera, "url: %[", "")
+	local s = ""
+	for i = 1, string.len(camera) do
+		local e = string.sub(camera, i, i)
+		if e ~= ":" then
+			s = s .. e
+		else
+			break
+		end
+
+	end
+
+	return s
 end
 
 return globals

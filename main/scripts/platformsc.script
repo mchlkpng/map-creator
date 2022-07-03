@@ -2,6 +2,8 @@ local globals = require "lua_modules.globals"
 local rendercam = require "rendercam.rendercam"
 go.property("collision", vmath.vector4(1,1,1,1))
 
+go.property("id", 0)
+
 function init(self)
 	self.type = "platform"
 	self.colboxesloaded = false
@@ -21,6 +23,7 @@ end
 
 function on_message(self, message_id, message, sender)
 	if message_id == hash("data") then
+		self.id = message.id
 		self.mode = message.mode
 		self.extraData = message.extradata
 		self.typedata = message.typedata

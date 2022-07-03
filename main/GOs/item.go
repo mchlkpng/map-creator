@@ -1,5 +1,5 @@
 components {
-  id: "itemsc"
+  id: "script"
   component: "/main/scripts/itemsc.script"
   position {
     x: 0.0

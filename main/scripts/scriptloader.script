@@ -18,6 +18,8 @@ local alloc
 local vars = {}
 local objs = {}
 
+go.property("id", 0)
+
 --[[
 Todo:
 get rid of that annoying line that is appearing for some reason
@@ -622,7 +624,7 @@ function animate(self, id, tb, callback)
                 frame = frame + 1
                 if frame > #frames then
                     if callback then callback() end
-                    frame = 0
+                    frame = 1
                 end
                 
                 setSprite(frames[frame], true)
@@ -634,7 +636,7 @@ function animate(self, id, tb, callback)
                 frame = frame - 1
                 if frame == 0 then
                     if callback then callback() end
-                    frame = #frames + 1
+                    frame = #frames
                 end
                 
                 setSprite(frames[frame], true)

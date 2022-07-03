@@ -2,6 +2,8 @@ local globals = require "lua_modules.globals"
 local rendercam = require "rendercam.rendercam"
 go.property("collision", vmath.vector4(1,1,1,1))
 
+go.property("id", 0)
+
 function init(self)
 	self.type = "item"
 	self.colboxesloaded = false
@@ -21,6 +23,7 @@ end
 
 function on_message(self, message_id, message, sender)
 	if message_id == hash("data") then
+		self.id = message.id
 		self.mode = message.mode
 		self.extraData = message.extradata
 		self.typedata = message.typedata
@@ -33,12 +36,11 @@ function on_message(self, message_id, message, sender)
 
 		if self.typedata.itemDimensions then
 			local dem = self.typedata.itemDimensions
-			self.collision = vmath.vector4(dem.x, dem.y, dem.z, dem.w)
+			self.collision = vmath.vector4(dem[1], dem[2], dem[3], dem[4])
 		else
 			self.collision = vmath.vector4(50, 50, 50, 50)
 		end
 
-		print(self.collision)
 		self.colboxesloaded = false
 		self.colboxes, self.colboxinfo = globals.setCollision(self, self.collision)
 		self.colboxesloaded = true
@@ -47,6 +49,7 @@ function on_message(self, message_id, message, sender)
 	if message_id == hash("trigger_response") then
 		if message.enter then
 			self.on = true
+			print("silec")
 		else
 			self.on = false
 		end

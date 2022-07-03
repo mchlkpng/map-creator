@@ -78,6 +78,7 @@ function init(self)
 	self.nodes.properties = gui.get_node("properties")
 	self.nodes.aot = gui.get_node("aot") -- add object type
 	self.mousePos = gui.get_node("mousePos")
+
 	self.choices.grid.addgrid = gui.get_node("addgrid")
 	self.choices.grid.removegrid = gui.get_node("removegrid")
 	self.choices.grid.addobject = gui.get_node("addobject")
@@ -142,9 +143,10 @@ end
 
 function on_input(self, action_id, action)
 	if action_id == nil and self.menuOpen ~= false then
-		self.mousePosition = vmath.vector3(action.x, action.y, 0)
-		gui.set_enabled(self.nodes.mouse, true)
-		gui.set_position(self.nodes.mouse, vmath.vector3(action.x, action.y, 0))
+		local thing = rendercam.world_to_screen(self.MouseWorldPos)
+		local mx, my = rendercam.screen_to_gui(thing.x, thing.y, gui.ADJUST_STRETCH)
+		self.mousePosition = vmath.vector3(mx, my, 0)
+		gui.set_position(self.nodes.mouse, self.mousePosition)
 	end
 
 	if action_id == hash("mouse_button_left") and action.pressed then

@@ -44,7 +44,7 @@ package = mchlkpng.mpcreator
 [physics]
 gravity_y = -1000.0
 scale = 0.01
-debug = 0
+debug = 1
 
 [ios]
 bundle_identifier = mchlkpng.mpcreator
@@ -55,12 +55,15 @@ http_timeout = 30.0
 [render]
 clear_color_green = 0.0
 
-[resource]
-http_cache = 0
-
 [html5]
 show_made_with_defold = 0
 
 [collection]
 max_instances = 10000
+
+[profiler]
+track_cpu = 1
+
+[graphics]
+max_debug_vertices = 99999999
 

@@ -1,7 +1,11 @@
+local globals = require("lua_modules.globals")
+local rendercam = require("rendercam.rendercam")
+
 function init(self)
 	self.grid = {
 	{1, 1}
-	}
+}
+
 end
 
 function final(self)
@@ -11,6 +15,7 @@ function final(self)
 end
 
 function update(self, dt)
+	
 end
 
 function on_message(self, message_id, message, sender)

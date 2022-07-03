@@ -15,6 +15,7 @@ local alloc
 local vars = {}
 local objs = {}
 
+go.property("id", 0)
 
 go.property("texture", resource.atlas("/main/atlases/pix/128px/128px_2.atlas"))
 

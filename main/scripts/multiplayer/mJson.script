@@ -70,7 +70,7 @@ function getCamId()
 	end
 	local collection = s
 
-	return go.get_id(collection .. "_camera"), collection
+	return go.get_id("/"..collection .. "_camera"), collection
 end
 
 
@@ -102,6 +102,16 @@ function update(self, dt)
 	if not self.doneOnce then
 		self.doneOnce = true
 		--timer.delay(3, false, function()msg.post("#downloader", "dMod", {server = globals.hostname(true), mod = "oldMod", redownload = false}) end)
+	end
+
+	local x, y, w, h = defos.get_window_size()
+	if (self.oldW ~= w) and (self.oldH ~= h) then
+		local g = globals.gcf({w, h})
+		print(w/g, h/g, g)
+		local newW = (w/g)*120
+		local newH = (h/g)*120
+		self.oldW = w; self.oldH = h
+		go.set(globals.hash_to_string(getCamId()).."#script", "viewArea", vmath.vector3(newW, newH, 0))
 	end
 end
 

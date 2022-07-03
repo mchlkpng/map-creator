@@ -2,6 +2,7 @@ local sysinfo = sys.get_sys_info()
 local directory = sys.get_save_file("mpcreator", "directory.dir"):gsub("directory.dir", "")
 local normDir = lfs.currentdir()
 local globals = require "lua_modules.globals"
+local rendercam = require "rendercam.rendercam"
 
 local function tblen(T)
 	local len = 0
@@ -29,15 +30,16 @@ function init(self)
 			print("server not running on " .. hn)
 
 			for i, v in ipairs(con) do
-				if  not string.find(v.address, "192.168") then break end
-				http.request("http://" .. v.address .. ":2567/allgood", "GET", function(self, id, response)
-					if status == 200 or 301 and response.response == "All good!" then
-						globals.setHost("http://" .. v.address)
-						print("server up at " .. self.host .. ":2567")
-					else
-						print("server not running on " .. v.address)
-					end
-				end)
+				if string.find(v.address, "192.168") then
+					http.request("http://" .. v.address .. ":2567/allgood", "GET", function(self, id, response)
+						if status == 200 or 301 and response.response == "All good!" then
+							globals.setHost("http://" .. v.address)
+							print("server up at " .. self.host .. ":2567")
+						else
+							print("server not running on " .. v.address)
+						end
+					end)
+				end
 			end
 
 		end

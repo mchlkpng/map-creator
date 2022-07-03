@@ -11,7 +11,7 @@ end
 function init(self)
 	msg.post(".", "acquire_input_focus")
 	self.dir = vmath.vector3()
-	msg.post("/jsonloader#json", "getcollection")
+	msg.post("/jsonloader", "getcollection")
 
 
 	go.set(".", "position.x", 500)
@@ -34,6 +34,13 @@ function update(self, dt)
 		go.set_position(change)
 
 		self.dir = vmath.vector3()
+	end
+
+	if not self.doneOnce and self.collection then
+		self.doneOnce = true
+		if self.collection ~= "mapcreator" then
+			rendercam.follow(go.get_id("/player"), true, go.get_id("/"..self.collection.."_camera"))
+		end
 	end
 end
 
