@@ -44,7 +44,7 @@ package = mchlkpng.mpcreator
 [physics]
 gravity_y = -1000.0
 scale = 0.01
-debug = 1
+debug = 0
 
 [ios]
 bundle_identifier = mchlkpng.mpcreator
@@ -63,7 +63,4 @@ max_instances = 10000
 
 [profiler]
 track_cpu = 1
-
-[graphics]
-max_debug_vertices = 99999999
 

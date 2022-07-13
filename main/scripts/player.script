@@ -50,6 +50,30 @@ function update(self, dt)
 	self.dir.x = 0; self.dir.y = 0; self.dir.z = 0
 
 	globals.clearVector(self.correction)
+
+	local from = go.get_position()
+	local to = vmath.vector3(from.x, from.y - 1000, from.z)
+	local result = physics.raycast(from, to, {hash("platform")})
+	if result then
+		draw_line(from, result.position) -- <5>
+		if go.get_position().y - result.position.y <= math.abs(self.collision.z)--[[ + math.abs(self.collision.w))/2]] then
+			self.grav = 0
+			self.coldown = true
+		else
+			self.coldown = false
+		end
+	else
+		self.coldown = false
+		draw_line(from, to) -- <6>
+	end
+
+	if not self.coldown and self.allLoaded then
+		local pos = go.get_position()
+		go.set_position(vmath.vector3(pos.x, pos.y + (self.grav*dt), pos.z))
+		self.grav =  self.grav - 2500 * dt
+	end
+
+globals.clearVector(self.correction)
 end
 
 function on_message(self, message_id, message, sender)

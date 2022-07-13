@@ -1,7 +1,6 @@
 local globals = require("lua_modules.globals")
 function on_message(self, message_id, message, sender)
 	if message_id == hash("relpos") then
-		print(go.get(globals.hash_to_string(message.parId).."#script", "id"))
 		go.set_parent(go.get_id(), message.parId, true)
 		--go.set_position(message.relpos)
 	end

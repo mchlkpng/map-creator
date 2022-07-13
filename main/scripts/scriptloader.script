@@ -796,7 +796,7 @@ function on_message(self, message_id, message, sender)
                         self.defaultSprite = self.resources.defaultSprite
                         setSprite(self.defaultSprite)
                         local eee = getIKey(self.collisions, self.defaultSprite)
-                        self.colboxes, self.colboxinfo = globals.setCollision(self, eee)
+                        --self.colboxes, self.colboxinfo = globals.setCollision(self, eee)
                     end
                     if self.mode == "ingame" then
                         self.scriptLoaded = true
@@ -895,7 +895,6 @@ function on_message(self, message_id, message, sender)
 end
 
 function update(self, dt)
-
     if not self.doneOnce then
         self.doneOnce = true
     end
