@@ -17,7 +17,7 @@ local objs = {}
 
 go.property("id", 0)
 
-go.property("texture", resource.atlas("/main/atlases/pix/128px/128px_2.atlas"))
+go.property("texture", hash("/main/atlases/pix/128px/128px_2.a.texturesetc"))
 
 function stop_animation(self)
 	if self.animTimer then
@@ -174,10 +174,11 @@ function getSprites(self, spriteSheets, textures, allocs)
 			end
 			if using ~= "exists" then
 				if using then
-					go.set("#", "texture", hash("/main/atlases/pix/" .. res .. "px/" .. using .. ".texturesetc"))
+					go.set("#", "texture", hash("/main/atlases/pix/" .. res .. "px/" .. using .. ".a.texturesetc"))
 
 
 					local url = go.get("#", "texture")
+					print(url)
 					go.set("#sprite", "image", url)
 					local ee = imageloader.load{data = textures[w]}
 					resource.set_texture(go.get("#sprite", "texture0"), ee.header, ee.buffer)
@@ -221,7 +222,7 @@ function getSprites(self, spriteSheets, textures, allocs)
 				end
 				if using ~= "exists" then
 					if using then
-						go.set("#", "texture", hash("/main/atlases/pix/" .. res .. "px/" .. using .. ".texturesetc"))
+						go.set("#", "texture", hash("/main/atlases/pix/" .. res .. "px/" .. using .. ".a.texturesetc"))
 						go.set("#sprite", "image", go.get("#", "texture"))
 						local ee = imageloader.load{data = textures[w.texName]}
 						resource.set_texture(go.get("#sprite", "texture0"), ee.header, ee.buffer)

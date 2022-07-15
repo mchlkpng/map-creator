@@ -28,6 +28,7 @@ function init(self)
 	msg.post(".", "acquire_input_focus")
 	self.to = vmath.vector3()
 	self.correction = vmath.vector3()
+	self.comp = vmath.vector3()
 end
 
 function final(self)
@@ -73,7 +74,10 @@ function update(self, dt)
 		self.grav =  self.grav - 2500 * dt
 	end
 
-globals.clearVector(self.correction)
+
+	go.set_position(go.get_position() + self.comp)
+
+	globals.clearVector(self.correction); globals.clearVector(self.comp)
 end
 
 function on_message(self, message_id, message, sender)
@@ -90,7 +94,6 @@ function on_message(self, message_id, message, sender)
 		-- how to move out of all of them by accumulating a
 		-- correction vector for this frame:
 		if message.distance > 0 then
-			print("e")
 			-- First, project the accumulated correction onto
 			-- the penetration vector
 			local proj = vmath.project(self.correction, message.normal * message.distance)
@@ -98,7 +101,7 @@ function on_message(self, message_id, message, sender)
 				-- Only care for projections that does not overshoot.
 				local comp = (message.distance - message.distance * proj) * message.normal
 				-- Apply compensation
-				go.set_position(go.get_position() + comp)
+				self.comp = comp
 				-- Accumulate correction done
 				self.correction = self.correction + comp
 			end

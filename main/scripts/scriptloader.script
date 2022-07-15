@@ -29,7 +29,7 @@ Optimize game
 include fact vars are accessable thru var table
 ]]
 
-go.property("texture", resource.atlas("/main/atlases/pix/128px/128px_2.atlas"))
+go.property("texture", hash("/main/atlases/pix/128px/128px_2.a.texturesetc"))
 
 function gvars()
     return vars
@@ -174,7 +174,7 @@ function getResources(self, callback)
                 else
 
                     http.request(self.modserver.."/"..ref, "GET", function(self, id, response)
-                        if response.status == 304 or 200 then
+                        if response.status == 304 or response.status == 200 then
                             local jt = json.decode(response.response)
                             loadedFiles[ref] = jt
                             callback(jt)
@@ -371,7 +371,8 @@ function getSprites(self, spriteSheets, textures, allocs)
             end
             if using ~= "exists" then
                 if using then
-                    go.set("#", "texture", hash("/main/atlases/pix/" .. res .. "px/" .. using .. ".texturesetc"))
+                    go.set("#", "texture", hash("/main/atlases/pix/" .. res .. "px/" .. using .. ".a.texturesetc"))
+
 
                     local url = go.get("#", "texture")
                     go.set("#sprite", "image", url)
@@ -384,7 +385,7 @@ function getSprites(self, spriteSheets, textures, allocs)
                 end
             end
         end
-        
+
         if #needtosave ~= 0 then
             for j, w in ipairs(needtosave) do
                 local using
@@ -417,7 +418,7 @@ function getSprites(self, spriteSheets, textures, allocs)
                 end
                 if using ~= "exists" then
                     if using then
-                        go.set("#", "texture", hash("/main/atlases/pix/" .. res .. "px/" .. using .. ".texturesetc"))
+                        go.set("#", "texture", hash("/main/atlases/pix/" .. res .. "px/" .. using .. ".a.texturesetc"))
                         go.set("#sprite", "image", go.get("#", "texture"))
                         local ee = imageloader.load{data = textures[w.texName]}
                         resource.set_texture(go.get("#sprite", "texture0"), ee.header, ee.buffer)
@@ -432,7 +433,7 @@ function getSprites(self, spriteSheets, textures, allocs)
     end
 
 
-    
+
 end
 
 

@@ -89,7 +89,6 @@ function on_message(self, message_id, message, sender)
 		-- how to move out of all of them by accumulating a
 		-- correction vector for this frame:
 		if message.distance > 0 then
-			print("e")
 			-- First, project the accumulated correction onto
 			-- the penetration vector
 			local proj = vmath.project(self.correction, message.normal * message.distance)
