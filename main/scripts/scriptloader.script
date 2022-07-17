@@ -848,7 +848,7 @@ function on_message(self, message_id, message, sender)
 
         local texname = ttByName[name]
         local tinf = takenTextures[texname]
-        go.set("#", "texture", hash("/main/atlases/pix/" .. tinf.res .. "px/" .. texname .. ".texturesetc"))
+        go.set("#", "texture", hash("/main/atlases/pix/" .. tinf.res .. "px/" .. texname .. ".a.texturesetc"))
         go.set("#sprite", "image", go.get("#", "texture"))
         self.currentTex = name
     end

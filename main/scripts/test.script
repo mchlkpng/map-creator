@@ -52,6 +52,7 @@ function init(self)
 		local dat = file:read("*a")
 		file:close()
 		local imgRes = imageloader.load{data = dat}
+		go.set("#sprite", "image", hash("/main/atlases/pix/128px/128px_1.a.texturesetc"))
 		resource.set_texture(go.get("#sprite", "texture0"), imgRes.header, imgRes.buffer)
 		sprite.play_flipbook("#sprite", "128px_3")
 	else
@@ -75,7 +76,11 @@ function final(self)
 end
 
 function update(self, dt)
-	
+
+	if not self.doneOnce then
+		self.doneOnce = true
+		go.delete(go.get_id("/128"))
+	end
 end
 
 function on_message(self, message_id, message, sender)

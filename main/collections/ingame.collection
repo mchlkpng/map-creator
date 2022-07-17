@@ -612,7 +612,7 @@ embedded_instances {
   "    count: 3\\n"
   "  }\\n"
   "  data: 17.34\\n"
-  "  data: 97.8525\\n"
+  "  data: 100.0\\n"
   "  data: 10.0\\n"
   "  data: 40.0\\n"
   "  data: 40.0\\n"

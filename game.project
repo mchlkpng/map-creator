@@ -64,3 +64,6 @@ max_instances = 10000
 [profiler]
 track_cpu = 1
 
+[graphics]
+texture_profiles = /prof.texture_profiles
+

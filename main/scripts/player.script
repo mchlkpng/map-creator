@@ -26,7 +26,6 @@ function init(self)
 	self.coldown = false
 	self.dir = vmath.vector3()
 	msg.post(".", "acquire_input_focus")
-	self.to = vmath.vector3()
 	self.correction = vmath.vector3()
 	self.comp = vmath.vector3()
 end
@@ -49,8 +48,6 @@ function update(self, dt)
 	go.set_position(change)
 
 	self.dir.x = 0; self.dir.y = 0; self.dir.z = 0
-
-	globals.clearVector(self.correction)
 
 	local from = go.get_position()
 	local to = vmath.vector3(from.x, from.y - 1000, from.z)
@@ -112,7 +109,6 @@ end
 function on_input(self, action_id, action)
 	if action_id == keybinds.jump and self.coldown then
 		self.grav = 1000
-		self.dir.y = 1
 		local pos = go.get_position()
 		pos.y = pos.y + 19
 		go.set_position(pos)
@@ -122,10 +118,6 @@ function on_input(self, action_id, action)
 	end
 	if action_id == keybinds.right then
 		self.dir.x = 1
-	end
-	if not action_id then
-		self.to.x = action.x
-		self.to.y = action.y
 	end
 end
 
