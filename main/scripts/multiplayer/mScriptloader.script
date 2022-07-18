@@ -178,7 +178,6 @@ function getSprites(self, spriteSheets, textures, allocs)
 
 
 					local url = go.get("#", "texture")
-					print(url)
 					go.set("#sprite", "image", url)
 					local ee = imageloader.load{data = textures[w]}
 					resource.set_texture(go.get("#sprite", "texture0"), ee.header, ee.buffer)

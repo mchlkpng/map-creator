@@ -27,7 +27,6 @@ function init(self)
 			globals.setHost(hn)
 		else
 			print("server not running on " .. hn)
-
 			for i, v in ipairs(con) do
 				if string.find(v.address, "192.168") then
 					http.request("http://" .. v.address .. ":2567/allgood", "GET", function(self, id, response)
