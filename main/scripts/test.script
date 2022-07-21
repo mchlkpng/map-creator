@@ -79,7 +79,7 @@ function update(self, dt)
 
 	if not self.doneOnce then
 		self.doneOnce = true
-		go.delete(go.get_id("/128"))
+		--go.delete(go.get_id("/128"))
 	end
 end
 

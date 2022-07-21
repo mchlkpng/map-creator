@@ -48,7 +48,7 @@ function update(self, dt)
 
 	self.dir.x = 0; self.dir.y = 0; self.dir.z = 0
 
-	local from = go.get_position()
+	local from = go.get_position(); from.x = from.x + 20
 	local to = vmath.vector3(from.x, from.y - 1000, from.z)
 	local result = physics.raycast(from, to, {hash("platform")})
 	if result then

@@ -14,7 +14,6 @@ function init(self)
 	msg.post("/jsonloader", "getcollection")
 
 
-	go.set(".", "position.x", 500)
 end
 
 function final(self)

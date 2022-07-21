@@ -73,6 +73,8 @@ function on_message(self, message_id, message, sender)
 		msg.post(sender, "disable")
 		msg.post(sender, "unload")
 		self.colLoaded = nil
+
+		
 	end
 
 	if message_id == hash("unload_proxy") then
